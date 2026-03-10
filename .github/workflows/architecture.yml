@@ -1,0 +1,16 @@
+name: Architecture Check
+
+on: [push]
+
+jobs:
+  architecture:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependency-cruiser
+        run: npm install dependency-cruiser
+
+      - name: Run architecture check
+        run: npx depcruise . --config .dependency-cruiser.js
