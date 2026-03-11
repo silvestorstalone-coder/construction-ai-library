@@ -14,14 +14,14 @@ jobs:
       - name: Установить Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 20
+          node-version: 24
 
       - name: Установить зависимости
-        run: |
-         npm install dotenv @octokit/rest
+        run: npm install dotenv @octokit/rest node-fetch@3
 
       - name: Запустить AI Runner
         run: node ai_runner.js
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
           YANDEX_API_KEY: ${{ secrets.YANDEX_API_KEY }}
+          YANDEX_FOLDER_ID: ${{ secrets.YANDEX_FOLDER_ID }}
