@@ -1,67 +1,60 @@
 /**
  * ai_runner.js
  * Подключение к Яндекс GPT для проверки и обновления модулей
+ * Расположение: корень репозитория
  */
 
 import fs from 'fs';
-import path from 'path';
 import { Octokit } from "@octokit/rest";
 import dotenv from 'dotenv';
+import fetch from 'node-fetch';
+
 dotenv.config();
 
-// Настройки GitHub
+// GitHub
 const octokit = new Octokit({ auth: process.env.GH_TOKEN });
 const REPO_OWNER = "silvestorstalone-coder";
 const REPO_NAME = "construction-ai-library";
 const BRANCH = "main";
 
-// Настройки Яндекс GPT
+// Яндекс GPT
 const YANDEX_API_KEY = process.env.YANDEX_API_KEY;
+const YANDEX_FOLDER_ID = process.env.YANDEX_FOLDER_ID;
 const YANDEX_API_URL = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion";
 
-// Функция: получить список .gs модулей
+// Получение списка .gs модулей
 function getGSModules() {
   const files = fs.readdirSync('./');
   return files.filter(f => f.endsWith('.gs'));
 }
 
-// Функция: прочитать SYSTEM_PIPELINE.md
+// Чтение SYSTEM_PIPELINE.md
 function getPipeline() {
   return fs.readFileSync('SYSTEM_PIPELINE.md', 'utf8');
 }
 
-// Функция: запрос к Яндекс GPT
+// Запрос к Яндекс GPT
 async function queryYandexGPT(prompt) {
-Не путай меня!
-Вот это правильно, если вставить?
-
-const response = await fetch(YANDEX_API_URL, {
-  method: 'POST',
-  headers: {
-    'Authorization': `Api-Key ${YANDEX_API_KEY}`,
-    'Content-Type': 'application/json',
-    'x-folder-id': process.env.YANDEX_FOLDER_ID
-  },
-  body: JSON.stringify({
-    modelUri: "gpt://b1g9du8j9im5ar92bag3",
-    completionOptions: {
-      temperature: 0.2,
-      maxTokens: "1000"
+  const response = await fetch(YANDEX_API_URL, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Api-Key ${YANDEX_API_KEY}`,
+      'Content-Type': 'application/json',
+      'x-folder-id': YANDEX_FOLDER_ID
     },
-    messages: [
-      {
-        role: "user",
-        text: prompt
-      }
-    ]
-  })
-});
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      prompt: prompt,
+      max_tokens: 1000,
+      temperature: 0.2
+    })
   });
+
   const data = await response.json();
-  return data.result?.[0]?.content || "";
+  return data?.result?.[0]?.content || "";
 }
 
-// Функция: обновление SYSTEM_PIPELINE.md
+// Обновление SYSTEM_PIPELINE.md
 async function updatePipeline() {
   const modules = getGSModules();
   const pipelineText = getPipeline();
@@ -71,22 +64,20 @@ async function updatePipeline() {
 Вот текущий SYSTEM_PIPELINE.md:
 ${pipelineText}
 
-Обнови SYSTEM_PIPELINE.md, чтобы в нём были отражены все модули, их последовательность и выходные модели.
-Форматировать как markdown, оставить стиль документа.
+Обнови SYSTEM_PIPELINE.md, чтобы были отражены все модули, их последовательность и выходные модели.
+Сохрани формат Markdown.
 `;
 
   const updatedText = await queryYandexGPT(prompt);
-
   fs.writeFileSync('SYSTEM_PIPELINE.md', updatedText, 'utf8');
   console.log('SYSTEM_PIPELINE.md обновлён через Яндекс GPT');
 }
 
-// Функция: коммит изменений в GitHub
+// Коммит изменений через GitHub
 async function commitChanges() {
   const fileContent = fs.readFileSync('SYSTEM_PIPELINE.md', 'utf8');
   const base64Content = Buffer.from(fileContent).toString('base64');
 
-  // Получаем SHA текущего файла
   const { data: fileData } = await octokit.repos.getContent({
     owner: REPO_OWNER,
     repo: REPO_NAME,
