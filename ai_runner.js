@@ -32,26 +32,30 @@ function getPipeline() {
 
 // Функция: запрос к Яндекс GPT
 async function queryYandexGPT(prompt) {
-  const response = await fetch(YANDEX_API_URL, {
-    method: 'POST',
-    headers: {
-  'Authorization': `Api-Key ${YANDEX_API_KEY}`,
-  'Content-Type': 'application/json',
-  'x-folder-id': process.env.YANDEX_FOLDER_ID
-}
-    body: JSON.stringify({
-  modelUri: "gpt://b1g***********/yandexgpt/latest",
-  completionOptions: {
-    temperature: 0.2,
-    maxTokens: "1000"
+Не путай меня!
+Вот это правильно, если вставить?
+
+const response = await fetch(YANDEX_API_URL, {
+  method: 'POST',
+  headers: {
+    'Authorization': `Api-Key ${YANDEX_API_KEY}`,
+    'Content-Type': 'application/json',
+    'x-folder-id': process.env.YANDEX_FOLDER_ID
   },
-  messages: [
-    {
-      role: "user",
-      text: prompt
-    }
-  ]
-})
+  body: JSON.stringify({
+    modelUri: "gpt://b1g9du8j9im5ar92bag3",
+    completionOptions: {
+      temperature: 0.2,
+      maxTokens: "1000"
+    },
+    messages: [
+      {
+        role: "user",
+        text: prompt
+      }
+    ]
+  })
+});
   });
   const data = await response.json();
   return data.result?.[0]?.content || "";
