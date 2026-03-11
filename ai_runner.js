@@ -34,6 +34,9 @@ function getPipeline() {
 }
 
 // Запрос к Яндекс GPT
+// ============================================
+// Функция запроса к Яндекс GPT с повтором
+// ============================================
 async function queryYandexGPT(prompt) {
   const payload = {
     modelUri: "gpt://b1g9du8j9im5ar92bag3",
@@ -61,10 +64,13 @@ async function queryYandexGPT(prompt) {
         body: JSON.stringify(payload)
       });
 
-      if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+      if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`);
+      }
 
       const data = await response.json();
-      return data.result?.[0]?.content || "";
+      // ✅ Возвращаем результат **только после успешного запроса**
+      return data.result && data.result[0] ? data.result[0].content : "";
 
     } catch (err) {
       console.log(`Попытка ${attempt} не удалась: ${err.message}`);
