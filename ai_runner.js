@@ -17,7 +17,7 @@ const BRANCH = "main";
 
 // Настройки Яндекс GPT
 const YANDEX_API_KEY = process.env.YANDEX_API_KEY;
-const YANDEX_API_URL = "https://api.ai.yandex.net/v1/models/gpt/completions";
+const YANDEX_API_URL = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion";
 
 // Функция: получить список .gs модулей
 function getGSModules() {
@@ -35,14 +35,23 @@ async function queryYandexGPT(prompt) {
   const response = await fetch(YANDEX_API_URL, {
     method: 'POST',
     headers: {
-      'Authorization': `Api-Key ${YANDEX_API_KEY}`,
-      'Content-Type': 'application/json'
-    },
+  'Authorization': `Api-Key ${YANDEX_API_KEY}`,
+  'Content-Type': 'application/json',
+  'x-folder-id': process.env.YANDEX_FOLDER_ID
+}
     body: JSON.stringify({
-      prompt: prompt,
-      max_tokens: 1000,
-      temperature: 0.2
-    })
+  modelUri: "gpt://b1g***********/yandexgpt/latest",
+  completionOptions: {
+    temperature: 0.2,
+    maxTokens: "1000"
+  },
+  messages: [
+    {
+      role: "user",
+      text: prompt
+    }
+  ]
+})
   });
   const data = await response.json();
   return data.result?.[0]?.content || "";
