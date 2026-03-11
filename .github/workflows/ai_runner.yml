@@ -1,0 +1,27 @@
+name: AI Pipeline Update
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  ai_update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Установить Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+
+      - name: Установить зависимости
+        run: |
+          npm install node-fetch@3 dotenv @octokit/rest
+
+      - name: Запустить AI Runner
+        run: node ai_runner.js
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          YANDEX_API_KEY: ${{ secrets.YANDEX_API_KEY }}
