@@ -18,7 +18,7 @@ jobs:
 
       - name: Установить зависимости
         run: |
-          npm install node-fetch@3 dotenv @octokit/rest
+         npm install dotenv @octokit/rest
 
       - name: Запустить AI Runner
         run: node ai_runner.js
