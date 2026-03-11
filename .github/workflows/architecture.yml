@@ -1,16 +1,62 @@
-name: Architecture Check
+name: Full Architecture & AI Automation
 
-on: [push]
+on:
+  push:
+    branches:
+      - main
+      - '**'
 
 jobs:
-  architecture:
+  architecture-and-ai:
     runs-on: ubuntu-latest
 
+    env:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+      YANDEX_API_KEY: ${{ secrets.YANDEX_API_KEY }}
+
     steps:
-      - uses: actions/checkout@v4
+      # 1. Клонируем репозиторий
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Install dependency-cruiser
-        run: npm install dependency-cruiser
+      # 2. Устанавливаем Node.js 24
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '24'
 
+      # 3. Устанавливаем зависимости для проверки архитектуры
+      - name: Install dependency-cruiser & jq
+        run: |
+          npm install -g dependency-cruiser
+          sudo apt-get update && sudo apt-get install -y jq curl
+
+      # 4. Проверка архитектуры модулей .gs
       - name: Run architecture check
         run: npx depcruise . --config .dependency-cruiser.js
+
+      # 5. Проверка норм и pipeline (пример)
+      - name: Pipeline validation (dry-run)
+        run: |
+          echo "Проверка наличия всех модулей .gs, SYSTEM_PIPELINE.md и Domain_Model.md"
+          test -f SYSTEM_PIPELINE.md && echo "SYSTEM_PIPELINE.md найден" || echo "!!! SYSTEM_PIPELINE.md отсутствует"
+          test -f DOMAIN_MODEL.md && echo "DOMAIN_MODEL.md найден" || echo "!!! DOMAIN_MODEL.md отсутствует"
+          gs_count=$(find . -type f -name "*.gs" | wc -l)
+          echo "Найдено модулей .gs: $gs_count"
+
+      # 6. Тест вызова Яндекс GPT
+      - name: Test Yandex GPT API
+        run: |
+          echo "Проверка токена Яндекс GPT"
+          curl -s -X POST https://api.ai.yandex.net/v1/models/text-bison:predict \
+            -H "Authorization: Api-Key $YANDEX_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"prompt":"Проверка подключения ИИ","max_tokens":50}' \
+            | jq
+
+      # 7. Сбор отчета (архитектура + API)
+      - name: Save summary
+        run: |
+          mkdir -p reports
+          npx depcruise . --config .dependency-cruiser.js > reports/dependency-report.txt
+          echo "Отчет по модулей .gs и pipeline создан в reports/dependency-report.txt"
