@@ -35,20 +35,48 @@ function getPipeline() {
 
 // Запрос к Яндекс GPT
 async function queryYandexGPT(prompt) {
-  const response = await fetch(YANDEX_API_URL, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Api-Key ${YANDEX_API_KEY}`,
-      'Content-Type': 'application/json',
-      'x-folder-id': YANDEX_FOLDER_ID
+  const payload = {
+    modelUri: "gpt://b1g9du8j9im5ar92bag3",
+    completionOptions: {
+      temperature: 0.2,
+      maxTokens: "1000"
     },
-    body: JSON.stringify({
-      model: "gpt-4o-mini",
-      prompt: prompt,
-      max_tokens: 1000,
-      temperature: 0.2
-    })
-  });
+    messages: [
+      {
+        role: "user",
+        text: prompt
+      }
+    ]
+  };
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const response = await fetch(YANDEX_API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Api-Key ${YANDEX_API_KEY}`,
+          'Content-Type': 'application/json',
+          'x-folder-id': process.env.YANDEX_FOLDER_ID
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+
+      const data = await response.json();
+      return data.result?.[0]?.content || "";
+
+    } catch (err) {
+      console.log(`Попытка ${attempt} не удалась: ${err.message}`);
+      if (attempt < 3) {
+        console.log("Повтор через 3 секунды...");
+        await new Promise(r => setTimeout(r, 3000));
+      } else {
+        throw new Error("Yandex GPT request failed после 3 попыток");
+      }
+    }
+  }
+}
 
   const data = await response.json();
   return data?.result?.[0]?.content || "";
