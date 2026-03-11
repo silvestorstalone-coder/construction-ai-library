@@ -1,37 +1,104 @@
-const fs = require('fs');
-const path = require('path');
-const axios = require('axios');
-require('dotenv').config();
+/**
+ * ai_runner.js
+ * Подключение к Яндекс GPT для проверки и обновления модулей
+ */
 
-// Получаем все .gs и .md файлы
-const repoPath = process.cwd();
-const gsFiles = fs.readdirSync(repoPath).filter(f => f.endsWith('.gs'));
-const mdFiles = fs.readdirSync(repoPath).filter(f => f.endsWith('.md'));
+import fs from 'fs';
+import path from 'path';
+import { Octokit } from "@octokit/rest";
+import fetch from 'node-fetch';
+import dotenv from 'dotenv';
+dotenv.config();
 
-// Пример функции анализа файла
-async function analyzeFile(filePath) {
-  const content = fs.readFileSync(filePath, 'utf-8');
+// Настройки GitHub
+const octokit = new Octokit({ auth: process.env.GH_TOKEN });
+const REPO_OWNER = "silvestorstalone-coder";
+const REPO_NAME = "construction-ai-library";
+const BRANCH = "main";
 
-  // Отправка в GPT API
-  const response = await axios.post('https://api.openai.com/v1/chat/completions', {
-    model: "gpt-5-mini",
-    messages: [
-      { role: "system", content: "Ты — инженер Subpodryad AI. Проанализируй код и предложи исправления." },
-      { role: "user", content: content }
-    ],
-    max_tokens: 2000
-  }, {
-    headers: { 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` }
+// Настройки Яндекс GPT
+const YANDEX_API_KEY = process.env.YANDEX_API_KEY;
+const YANDEX_API_URL = "https://api.ai.yandex.net/v1/models/gpt/completions";
+
+// Функция: получить список .gs модулей
+function getGSModules() {
+  const files = fs.readdirSync('./');
+  return files.filter(f => f.endsWith('.gs'));
+}
+
+// Функция: прочитать SYSTEM_PIPELINE.md
+function getPipeline() {
+  return fs.readFileSync('SYSTEM_PIPELINE.md', 'utf8');
+}
+
+// Функция: запрос к Яндекс GPT
+async function queryYandexGPT(prompt) {
+  const response = await fetch(YANDEX_API_URL, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Api-Key ${YANDEX_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      prompt: prompt,
+      max_tokens: 1000,
+      temperature: 0.2
+    })
+  });
+  const data = await response.json();
+  return data.result?.[0]?.content || "";
+}
+
+// Функция: обновление SYSTEM_PIPELINE.md
+async function updatePipeline() {
+  const modules = getGSModules();
+  const pipelineText = getPipeline();
+
+  const prompt = `
+У меня есть следующие модули JS/Apps Script: ${modules.join(', ')}.
+Вот текущий SYSTEM_PIPELINE.md:
+${pipelineText}
+
+Обнови SYSTEM_PIPELINE.md, чтобы в нём были отражены все модули, их последовательность и выходные модели.
+Форматировать как markdown, оставить стиль документа.
+`;
+
+  const updatedText = await queryYandexGPT(prompt);
+
+  fs.writeFileSync('SYSTEM_PIPELINE.md', updatedText, 'utf8');
+  console.log('SYSTEM_PIPELINE.md обновлён через Яндекс GPT');
+}
+
+// Функция: коммит изменений в GitHub
+async function commitChanges() {
+  const fileContent = fs.readFileSync('SYSTEM_PIPELINE.md', 'utf8');
+  const base64Content = Buffer.from(fileContent).toString('base64');
+
+  // Получаем SHA текущего файла
+  const { data: fileData } = await octokit.repos.getContent({
+    owner: REPO_OWNER,
+    repo: REPO_NAME,
+    path: 'SYSTEM_PIPELINE.md',
+    ref: BRANCH
   });
 
-  return response.data.choices[0].message.content;
+  await octokit.repos.createOrUpdateFileContents({
+    owner: REPO_OWNER,
+    repo: REPO_NAME,
+    path: 'SYSTEM_PIPELINE.md',
+    message: 'Обновление SYSTEM_PIPELINE.md через ИИ',
+    content: base64Content,
+    sha: fileData.sha,
+    branch: BRANCH
+  });
+
+  console.log('Коммит изменений выполнен');
 }
 
-async function run() {
-  for (const file of gsFiles.concat(mdFiles)) {
-    const result = await analyzeFile(path.join(repoPath, file));
-    console.log(`Analysis for ${file}:\n`, result);
-  }
+// Основной запуск
+async function main() {
+  await updatePipeline();
+  await commitChanges();
 }
 
-run();
+main().catch(err => console.error(err));
