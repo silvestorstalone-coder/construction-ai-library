@@ -6,7 +6,6 @@
 import fs from 'fs';
 import path from 'path';
 import { Octokit } from "@octokit/rest";
-import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 dotenv.config();
 
