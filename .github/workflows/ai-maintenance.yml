@@ -1,16 +1,15 @@
-name: AI Maintenance & Documentation Update
+name: AI Maintenance & Full Pipeline
 
 on:
   push:
     branches: [main]
   schedule:
-    - cron: "0 3 * * *" # Ночной запуск в 03:00
+    - cron: "0 3 * * *" # Ночной запуск 03:00
   workflow_dispatch:
 
 jobs:
-  ai_maintenance:
+  ai-maintenance:
     runs-on: ubuntu-latest
-
     env:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
       YANDEX_API_KEY: ${{ secrets.YANDEX_API_KEY }}
@@ -20,7 +19,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 24
         uses: actions/setup-node@v3
         with:
           node-version: '24'
@@ -30,19 +29,16 @@ jobs:
           npm install -g dependency-cruiser
           npm install node-fetch fs-extra
 
-      - name: Move .gs files to modules
-        run: node ai_tasks/move_gs_files.js
+      - name: Move and index .gs files
+        run: node ai_tasks/move_and_index_gs.js
 
       - name: Run architecture check
         run: npx depcruise . --config .dependency-cruiser.cjs
 
-      - name: Generate MODULE_INDEX.md
-       run: node ai_tasks/move_and_index_gs.js
-
       - name: Update SYSTEM_PIPELINE.md
         run: node ai_runner.js
 
-      - name: Commit and Push changes
+      - name: Commit and push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
