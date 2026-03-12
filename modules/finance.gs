@@ -18,8 +18,14 @@ var Finance = (function() {
     // 1️⃣ ТРУД
     var laborCost = totalHours * hourlyRate;
 
-    // 2️⃣ МАТЕРИАЛЫ (пока 0 если нет расчёта)
+    // 2️⃣ МАТЕРИАЛЫ
     var materialsCost = 0;
+    if (estimateResult && estimateResult.totalWorksList) {
+      for (var i = 0; i < estimateResult.totalWorksList.length; i++) {
+        var work = estimateResult.totalWorksList[i];
+        materialsCost += work.price * work.quantity;
+      }
+    }
 
     // 3️⃣ ТЕХНИКА (пока 0)
     var machineryCost = 0;
