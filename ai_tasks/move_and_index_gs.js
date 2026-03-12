@@ -54,10 +54,40 @@ function moveAndIndex() {
 
   for (let file of gsFiles) {
     const fileName = path.basename(file);
-
-    // Перемещаем файл в modules/
     const targetPath = path.join(MODULES_DIR, fileName);
-    fs.renameSync(file, targetPath);
+
+    try {
+      // Перемещаем файл
+      fs.renameSync(file, targetPath);
+      console.log(`✅ Moved: ${fileName}`);
+      
+      // Удаляем пустую папку, если осталась
+      const parentDir = path.dirname(file);
+      if (fs.existsSync(parentDir) && fs.readdirSync(parentDir).length === 0) {
+        fs.rmdirSync(parentDir, { recursive: true });
+        console.log(`🗑️ Removed empty folder: ${parentDir}`);
+      }
+
+      // Анализируем содержимое
+      const { functions, dependencies } = analyzeGs(targetPath);
+
+      indexLines.push(`## ${fileName}`);
+      indexLines.push(`Функции: ${functions.join(", ") || "нет"}`);
+      indexLines.push(`Зависимости: ${dependencies.join(", ") || "нет"}`);
+      indexLines.push("");
+
+    } catch (err) {
+      console.error(`❌ Failed for ${fileName}:`, err.message);
+    }
+  }
+
+  // Сохраняем MODULE_INDEX.md
+  const indexPath = path.join(ROOT_DIR, "MODULE_INDEX.md");
+  fs.writeFileSync(indexPath, indexLines.join("\n"), "utf-8");
+
+  console.log(`Перемещено ${gsFiles.length} файлов .gs в modules/`);
+  console.log(`MODULE_INDEX.md обновлён`);
+}
 
     // Анализируем содержимое
     const { functions, dependencies } = analyzeGs(targetPath);
