@@ -19,19 +19,22 @@ AI pipeline состоит из следующих основных компон
 
 ### Технологии
 
-- **Python**: основной язык программирования для разработки компонентов.
-- **TensorFlow/PyTorch**: библиотеки для машинного обучения.
-- **Docker**: для контейнеризации компонентов.
-- **Kubernetes**: для оркестрации компонентов.
+Для реализации AI pipeline используются следующие технологии:
+
+- **Python** для разработки и обучения моделей.
+- **Docker** для контейнеризации компонентов.
+- **Kubernetes** для оркестрации и управления контейнерами.
 
 ## GitHub Actions
 
-GitHub Actions используется для автоматизации CI/CD потока. Действия (actions) определяются в YAML-файлах и запускаются при определённых событиях (например, при создании ветки или пуше изменений в репозиторий).
+GitHub Actions используется для автоматизации CI/CD потока. Действия (actions) определяются в файлах `*.yml` и запускаются при определённых событиях (например, при создании ветки или пуше изменений в репозиторий).
 
 ### Пример конфигурации
 
+Пример конфигурации GitHub Actions для запуска тестов и сборки Docker-образов:
+
 ```yaml
-name: CI/CD
+name: CI
 on:
   push:
     branches:
@@ -52,82 +55,93 @@ jobs:
       - name: Run tests
         run: |
           pytest
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy to Kubernetes
-        env:
-          KUBECONFIG: ${{ secrets.KUBECONFIG }}
+      - name: Build Docker image
         run: |
-          kubectl apply -f deployment.yaml
+          docker build -t my-ai-pipeline .
 ```
 
 ## YandexGPT integration
 
-YandexGPT интегрируется в AI pipeline через API. Для этого необходимо получить токен доступа к API и использовать его в компонентах, которые взаимодействуют с YandexGPT.
+YandexGPT интегрируется в AI pipeline через API. Для этого необходимо получить токен доступа к API и использовать его в запросах к модели.
 
 ### Пример использования
 
+Пример использования YandexGPT для генерации текста:
+
 ```python
-import yandex_gpt
+import requests
 
-# Получение токена доступа
-token = 'YOUR_TOKEN'
+api_key = 'your-api-key'
+prompt = 'Generate a description of the AI pipeline architecture.'
 
-# Использование YandexGPT
-response = yandex_gpt.generate_text(token, "Hello, world!")
-print(response)
+response = requests.post(
+    'https://api.yandex.ru/ml/v1/generate',
+    headers={'Authorization': f'APIKEY {api_key}'},
+    json={'text': prompt}
+)
+
+response.raise_for_status()
+generated_text = response.json()['text']
+print(generated_text)
 ```
 
 ## Структура модулей
 
-Модули организованы в директории проекта. Каждый модуль содержит файлы с кодом, конфигурационными файлами и тестовыми сценариями.
+Модули организованы в виде директорий с соответствующими файлами и скриптами. Каждый модуль содержит:
+
+- `requirements.txt` для установки зависимостей.
+- `main.py` или `main.sh` для запуска модуля.
+- Дополнительные файлы и скрипты для выполнения конкретных задач.
 
 ### Пример структуры
 
 ```
-├── data_ingestion
-│   ├── data_sources
-│   │   ├── csv_source.py
-│   │   └── json_source.py
-│   ├── preprocessing.py
-│   └── config.yaml
-├── feature_engineering
-│   ├── feature_extractors.py
-│   └── transformers.py
-├── model_training
-│   ├── models.py
-│   └── training_script.py
-├── model_evaluation
-│   ├── evaluation_metrics.py
-│   └── test_script.py
-├── deployment
-│   ├── deployment_config.yaml
-│   └── deployment_script.py
-├── monitoring
-│   ├── logging.py
-│   └── monitoring_script.py
-└── ci_cd
-    ├── github_actions.yml
-    └── kubernetes_config.yaml
+ai_pipeline/
+├── data_ingestion/
+│   ├── requirements.txt
+│   ├── main.py
+│   └── ...
+├── feature_engineering/
+│   ├── requirements.txt
+│   ├── main.py
+│   └── ...
+├── model_training/
+│   ├── requirements.txt
+│   ├── main.py
+│   └── ...
+├── model_evaluation/
+│   ├── requirements.txt
+│   ├── main.py
+│   └── ...
+├── deployment/
+│   ├── requirements.txt
+│   ├── main.py
+│   └── ...
+└── monitoring/
+    ├── requirements.txt
+    ├── main.py
+    └── ...
 ```
 
 ## CI/CD поток
 
 CI/CD поток включает в себя следующие этапы:
 
-1. **Сборка (Build)**: сборка компонентов проекта.
+1. **Сборка (Build)**: сборка Docker-образов для компонентов AI pipeline.
 2. **Тестирование (Test)**: запуск тестов для проверки работоспособности компонентов.
 3. **Деплоймент (Deploy)**: развёртывание компонентов в продуктивной среде.
 
 ### Пример потока
 
-1. При пуше изменений в ветку `main` запускается действие `build`.
-2. Действие `build` выполняет сборку компонентов и запускает тесты.
-3. Если тесты успешны, запускается действие `deploy`.
-4. Действие `deploy` развёртывает компоненты в продуктивной среде.
+1. При пуше изменений в ветку `main` запускается GitHub Action `CI`.
+2. Действие `build` собирает Docker-образы для компонентов.
+3. Действие `test` запускает тесты для проверки работоспособности компонентов.
+4. Если тесты успешны, действие `deploy` развёртывает компоненты в продуктивной среде.
 
-### Мониторинг и логирование
+### Инструменты
 
-Мониторинг и логирование осуществляются через модуль `monitoring`. Логи собираются и хранятся в централизованном хранилище для последующего анализа.
+Для реализации CI/CD потока используются следующие инструменты:
+
+- **GitHub Actions** для автоматизации процессов.
+- **Docker** для сборки и развёртывания компонентов.
+- **Kubernetes** для оркестрации и управления контейнерами.
