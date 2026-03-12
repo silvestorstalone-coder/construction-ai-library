@@ -37,7 +37,7 @@ jobs:
         run: npx depcruise . --config .dependency-cruiser.cjs
 
       - name: Generate MODULE_INDEX.md
-        run: node ai_tasks/generate_module_index.js
+       run: node ai_tasks/move_and_index_gs.js
 
       - name: Update SYSTEM_PIPELINE.md
         run: node ai_runner.js
