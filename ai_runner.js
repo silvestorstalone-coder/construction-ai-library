@@ -1,71 +1,57 @@
-// ai_runner.js
-
 import fs from "fs";
 import { execSync } from "child_process";
 
-const API_URL =
-  "https://llm.api.cloud.yandex.net/foundationModels/v1/completion";
-
-const GH_TOKEN = process.env.GH_TOKEN;
+const API_URL = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion";
 const API_KEY = process.env.YANDEX_API_KEY;
 const FOLDER_ID = process.env.YANDEX_FOLDER_ID;
 
-const TARGET_FILE = "./docs/SYSTEM_PIPELINE.md";
+const PIPELINE_FILE = "./docs/SYSTEM_PIPELINE.md";
+const INDEX_FILE = "./docs/MODULE_INDEX.md";
+const TARGET_MODULE = "./modules/finance.gs"; // Модуль, который мы будем "лечить"
 
 if (!API_KEY || !FOLDER_ID) {
   console.error("Missing Yandex credentials");
   process.exit(1);
 }
 
-// Чтение старого файла
-let oldContent = "";
+// --- 1. СБОР КОНТЕКСТА (То, что видит ИИ) ---
+const pipelineContent = fs.existsSync(PIPELINE_FILE) ? fs.readFileSync(PIPELINE_FILE, "utf8") : "Файл не найден";
+const indexContent = fs.existsSync(INDEX_FILE) ? fs.readFileSync(INDEX_FILE, "utf8") : "Файл не найден";
+const currentCode = fs.existsSync(TARGET_MODULE) ? fs.readFileSync(TARGET_MODULE, "utf8") : "";
 
-if (fs.existsSync(TARGET_FILE)) {
-  oldContent = fs.readFileSync(TARGET_FILE, "utf8");
-}
-
-// Prompt для AI
 const prompt = `
-Обнови файл SYSTEM_PIPELINE.md.
+Ты — ведущий инженер-программист. Твоя задача: привести код модуля в соответствие с архитектурным эталоном.
 
-Требования:
-- описать архитектуру AI pipeline
-- GitHub Actions
-- YandexGPT integration
-- структура модулей
-- CI/CD поток
+ЭТАЛОН ЛОГИКИ (SYSTEM_PIPELINE.md):
+${pipelineContent}
 
-Ответ должен быть только содержимым markdown файла.
+КАРТА СВЯЗЕЙ (MODULE_INDEX.md):
+${indexContent}
+
+ТЕКУЩИЙ КОД МОДУЛЯ (${TARGET_MODULE}):
+${currentCode}
+
+ЗАДАНИЕ:
+1. Проверь наличие заглушек (например, "materialsCost = 0").
+2. На основе карты связей (где Finance зависит от Estimate), внедри реальный расчет:
+   - materialsCost должен считаться как сумма (work.price * work.quantity) из estimateResult.totalWorksList.
+3. Верни ТОЛЬКО чистый код исправленного файла. Не пиши никаких пояснений, только код Google Apps Script.
 `;
 
-// Payload
 const payload = {
-  modelUri: `gpt://${FOLDER_ID}/yandexgpt-lite/latest`,
-  completionOptions: {
-    temperature: 0.2,
-    maxTokens: 1500
-  },
+  modelUri: `gpt://${FOLDER_ID}/yandexgpt/latest`, // Используем мощную модель для кода
+  completionOptions: { temperature: 0.1, maxTokens: 2500 },
   messages: [
-    {
-      role: "system",
-      text: "Ты инженер DevOps и AI pipeline."
-    },
-    {
-      role: "user",
-      text: prompt
-    }
+    { role: "system", text: "Ты эксперт по автоматизации строительных расчетов и Google Apps Script." },
+    { role: "user", text: prompt }
   ]
 };
 
-// Retry функция
+// --- 2. СЕТЕВОЙ БЛОК (Твои оригинальные Retry) ---
 async function callYandexGPT() {
-
   const MAX_RETRIES = 3;
-
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-
     try {
-
       const response = await fetch(API_URL, {
         method: "POST",
         headers: {
@@ -75,80 +61,55 @@ async function callYandexGPT() {
         },
         body: JSON.stringify(payload)
       });
-
       const text = await response.text();
-
-      if (!response.ok) {
-        console.error("API error:", response.status);
-        console.error(text);
-        throw new Error("Yandex API error");
-      }
-
-      const data = JSON.parse(text);
-
-      return data;
-
+      if (!response.ok) throw new Error(`API error: ${response.status}`);
+      return JSON.parse(text);
     } catch (err) {
-
       console.error(`Attempt ${attempt} failed:`, err.message);
-
-      if (attempt === MAX_RETRIES) {
-        throw err;
-      }
-
+      if (attempt === MAX_RETRIES) throw err;
       await new Promise(r => setTimeout(r, 3000 * attempt));
     }
   }
 }
 
-// Обновление файла
-async function updateFile() {
-
-  let data;
-
-  try {
-    data = await callYandexGPT();
-  } catch (err) {
-    console.error("Yandex GPT request failed:", err.message);
-    return;
-  }
-
-  console.log("Raw response:", JSON.stringify(data, null, 2));
-
-  const updatedText =
-    data?.result?.alternatives?.[0]?.message?.text || "";
-
-  if (!updatedText || updatedText.trim().length < 50) {
-    console.log("AI response empty — skipping update");
-    return;
-  }
-
-  if (updatedText.trim() === oldContent.trim()) {
-    console.log("No changes detected");
-    return;
-  }
-
-  fs.writeFileSync(TARGET_FILE, updatedText, "utf8");
-
-  console.log("File updated:", TARGET_FILE);
+// --- 3. ГЛАВНАЯ ФУНКЦИЯ ОБНОВЛЕНИЯ ---
+async function runEngineerCycle() {
+  console.log("🚀 AI Инженер начинает анализ модуля: " + TARGET_MODULE);
 
   try {
+    const data = await callYandexGPT();
+    let updatedCode = data?.result?.alternatives?.[0]?.message?.text || "";
 
-    execSync("git config user.name 'AI Pipeline'");
-    execSync("git config user.email 'ai@pipeline.local'");
+    // Очистка ответа от Markdown-оберток, если ИИ их добавил
+    updatedCode = updatedCode.replace(/```javascript/g, "").replace(/```/g, "").trim();
 
-    execSync(`git add ${TARGET_FILE}`);
+    if (!updatedCode || updatedCode.length < 100) {
+      console.log("⚠️ Ответ пустой или слишком короткий — отмена.");
+      return;
+    }
 
-    execSync(`git commit -m "AI: update SYSTEM_PIPELINE.md"`);
+    if (updatedCode === currentCode) {
+      console.log("✅ Код уже соответствует эталону.");
+      return;
+    }
 
+    // Сохраняем результат
+    fs.writeFileSync(TARGET_MODULE, updatedCode, "utf8");
+    console.log("📝 Файл обновлен локально.");
+
+    // Git процедуры
+    execSync("git config user.name 'AI Engineer'");
+    execSync("git config user.email 'ai-engineer@pipeline.local'");
+    execSync(`git add ${TARGET_MODULE}`);
+    execSync(`git commit -m "AI: автоматическое внедрение логики в ${path.basename(TARGET_MODULE)}"`);
     execSync("git push");
 
-    console.log("Changes pushed");
+    console.log("🚀 Изменения успешно отправлены в репозиторий!");
 
   } catch (err) {
-
-    console.error("Git commit failed:", err.message);
+    console.error("❌ Критическая ошибка в цикле инженера:", err.message);
   }
 }
 
-updateFile();
+runEngineerCycle();
+
