@@ -51,15 +51,18 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          # Добавляем все измененные файлы и новые папки
+          # 1. ПРИНУДИТЕЛЬНО удаляем node_modules из индекса (если они там есть)
+          git rm -r --cached node_modules || echo "node_modules already clean"
+          
+          # 2. Добавляем ваши рабочие папки
           git add modules/ MODULE_INDEX.md docs/ SYSTEM_PIPELINE.md
-          git add -A  # захватываем также удаленные файлы .gs
+          
+          # 3. Фиксируем удаления (чтобы старые пути .gs исчезли из репозитория)
+          git add -u 
 
-          # Коммитим, если есть изменения
-          git diff --cached --quiet || git commit -m "AI Maintenance: move files to modules and update index"
+          # 4. Коммитим изменения
+          git diff --cached --quiet || git commit -m "AI Maintenance: move files and cleanup node_modules"
           
-          # Обновляемся с origin, избегая reset hard
+          # 5. Синхронизация и пуш
           git pull --rebase origin main
-          
-          # Push всех изменений
           git push origin main
