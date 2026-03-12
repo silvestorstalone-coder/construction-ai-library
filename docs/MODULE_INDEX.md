@@ -1,66 +1,67 @@
 # MODULE_INDEX.md
-Последнее обновление: 3/12/2026, 8:23:56 PM
+Последнее обновление: 3/12/2026, 9:05:30 PM
+> Этот файл является ЭТАЛОНОМ связей для ИИ.
 
-## accounting.gs
+## 📦 accounting.gs
 - **Функции**: process
-- **Зависимости**: нет
+- **Зависимости (связи)**: автономен
 
-## aiModule.gs
+## 📦 aiModule.gs
 - **Функции**: classifyRow, callYandexGPT, parseAIResponse, _validateNorm, _getPropertyAsFloat, _getPropertyAsInt, getStats, resetStats, logInfo, logWarning, logError, logDebug
-- **Зависимости**: нет
+- **Зависимости (связи)**: автономен
 
-## audit.gs
+## 📦 audit.gs
 - **Функции**: createAudit, _formatAuditSheet, _addStatistics, getAuditSummary, logInfo, logWarning
-- **Зависимости**: нет
+- **Зависимости (связи)**: Estimate ➔ Technology
 
-## commerce.gs
+## 📦 commerce.gs
 - **Функции**: process
-- **Зависимости**: нет
+- **Зависимости (связи)**: автономен
 
-## config.gs
+## 📦 config.gs
 - **Функции**: get, set
-- **Зависимости**: нет
+- **Зависимости (связи)**: автономен
 
-## diagnostics.gs
+## 📦 diagnostics.gs
 - **Функции**: initLogger, log, logInfo, logWarning, logError
-- **Зависимости**: нет
+- **Зависимости (связи)**: автономен
 
-## estimate.gs
+## 📦 estimate.gs
 - **Функции**: process, detectHeaderRow, detectColumns, parseRows, buildStagesFromWorks, parseNumber, normalizeUnit, getUnitStats, rowHasData, log
-- **Зависимости**: нет
+- **Зависимости (связи)**: автономен
 
-## finance.gs
+## 📦 finance.gs
 - **Функции**: process
-- **Зависимости**: нет
+- **Зависимости (связи)**: автономен
 
-## main.gs
+## 📦 main.gs
 - **Функции**: runSubpodryadAI, _verifyModulesLoaded, _renderResults, logInfo, logWarning, logError
-- **Зависимости**: нет
+- **Зависимости (связи)**: Estimate ➔ Technology ➔ Finance ➔ Schedule ➔ Materials ➔ Commerce ➔ AuditModule
 
-## menu.gs
+## 📦 menu.gs
 - **Функции**: onOpen, menuEstimate, menuMyEstimate, menuTechnology, menuSchedule, menuWorkers, menuEquipment, menuMaterialsConsumption, menuMaterialsRequest, menuFinance, menuCommerce, menuKS2, menuInvoice, menuAct
-- **Зависимости**: нет
+- **Зависимости (связи)**: автономен
 
-## norms.gs
+## 📦 norms.gs
 - **Функции**: normalizeWorkName, getNorm, addNorm, _cloneNorm, logInfo
-- **Зависимости**: нет
+- **Зависимости (связи)**: автономен
 
-## profit.gs
+## 📦 profit.gs
 - **Функции**: process
-- **Зависимости**: нет
+- **Зависимости (связи)**: автономен
 
-## schedule.gs
+## 📦 schedule.gs
 - **Функции**: process
-- **Зависимости**: нет
+- **Зависимости (связи)**: автономен
 
-## technology.gs
+## 📦 technology.gs
 - **Функции**: process, getTechnologyForWork, isValidNorm, logInfo, logWarning, logError
-- **Зависимости**: нет
+- **Зависимости (связи)**: автономен
 
-## test.gs
+## 📦 test.gs
 - **Функции**: testAuditDiagnostics, simpleTestAudit, showAllSheets, testYandexGPTFixed
-- **Зависимости**: нет
+- **Зависимости (связи)**: Estimate ➔ Technology ➔ AuditModule
 
-## utils.gs
+## 📦 utils.gs
 - **Функции**: loadDataFromSheetRaw, convert2DArrayToObjects, normalizeColumnNames, normalizeUnits, normalizeSheetValues
-- **Зависимости**: нет
+- **Зависимости (связи)**: автономен
