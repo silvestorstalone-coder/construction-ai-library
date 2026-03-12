@@ -1,0 +1,12 @@
+# Зависимости
+node_modules/
+dist/
+npm-debug.log*
+
+# Логи и временные файлы
+logs/
+*.log
+.DS_Store
+
+# Конфиденциальные данные
+.env
