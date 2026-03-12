@@ -1,4 +1,5 @@
 import fs from "fs";
+import path from "path";
 import { execSync } from "child_process";
 
 const API_URL = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion";
@@ -39,7 +40,7 @@ ${currentCode}
 `;
 
 const payload = {
-  modelUri: `gpt://${FOLDER_ID}/yandexgpt/latest`, // Используем мощную модель для кода
+  modelUri: `gpt://${FOLDER_ID}/yandexgpt/latest`, 
   completionOptions: { temperature: 0.1, maxTokens: 2500 },
   messages: [
     { role: "system", text: "Ты эксперт по автоматизации строительных расчетов и Google Apps Script." },
@@ -47,7 +48,7 @@ const payload = {
   ]
 };
 
-// --- 2. СЕТЕВОЙ БЛОК (Твои оригинальные Retry) ---
+// --- 2. СЕТЕВОЙ БЛОК (Retry логика) ---
 async function callYandexGPT() {
   const MAX_RETRIES = 3;
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
@@ -62,7 +63,7 @@ async function callYandexGPT() {
         body: JSON.stringify(payload)
       });
       const text = await response.text();
-      if (!response.ok) throw new Error(`API error: ${response.status}`);
+      if (!response.ok) throw new Error(`API error: ${response.status} - ${text}`);
       return JSON.parse(text);
     } catch (err) {
       console.error(`Attempt ${attempt} failed:`, err.message);
@@ -80,7 +81,7 @@ async function runEngineerCycle() {
     const data = await callYandexGPT();
     let updatedCode = data?.result?.alternatives?.[0]?.message?.text || "";
 
-    // Очистка ответа от Markdown-оберток, если ИИ их добавил
+    // Очистка ответа от Markdown-оберток
     updatedCode = updatedCode.replace(/```javascript/g, "").replace(/```/g, "").trim();
 
     if (!updatedCode || updatedCode.length < 100) {
@@ -88,23 +89,31 @@ async function runEngineerCycle() {
       return;
     }
 
-    if (updatedCode === currentCode) {
+    if (updatedCode.trim() === currentCode.trim()) {
       console.log("✅ Код уже соответствует эталону.");
       return;
     }
 
-    // Сохраняем результат
+    // Сохраняем результат локально
     fs.writeFileSync(TARGET_MODULE, updatedCode, "utf8");
     console.log("📝 Файл обновлен локально.");
 
-    // Git процедуры
-    execSync("git config user.name 'AI Engineer'");
-    execSync("git config user.email 'ai-engineer@pipeline.local'");
-    execSync(`git add ${TARGET_MODULE}`);
-    execSync(`git commit -m "AI: автоматическое внедрение логики в ${path.basename(TARGET_MODULE)}"`);
-    execSync("git push");
+    // --- БЛОК GIT С ЗАЩИТОЙ ОТ КОНФЛИКТОВ ---
+    try {
+      execSync("git config user.name 'AI Engineer'");
+      execSync("git config user.email 'ai-engineer@pipeline.local'");
+      
+      // Забираем изменения, чтобы избежать конфликта в INDEX.md
+      execSync("git pull --rebase origin main");
 
-    console.log("🚀 Изменения успешно отправлены в репозиторий!");
+      execSync(`git add ${TARGET_MODULE}`);
+      execSync(`git commit -m "AI: автоматическое внедрение логики в ${path.basename(TARGET_MODULE)}"`);
+      execSync("git push origin main");
+
+      console.log("🚀 Изменения успешно отправлены в репозиторий!");
+    } catch (gitErr) {
+      console.error("⚠️ Ошибка Git (возможно, нет прав или конфликт):", gitErr.message);
+    }
 
   } catch (err) {
     console.error("❌ Критическая ошибка в цикле инженера:", err.message);
@@ -112,4 +121,3 @@ async function runEngineerCycle() {
 }
 
 runEngineerCycle();
-
