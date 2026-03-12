@@ -1,92 +1,154 @@
 // ai_runner.js
+
 import fs from "fs";
-import fetch from "node-fetch";
 import { execSync } from "child_process";
 
-const YANDEX_API_URL = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion";
+const API_URL =
+  "https://llm.api.cloud.yandex.net/foundationModels/v1/completion";
 
 const GH_TOKEN = process.env.GH_TOKEN;
-const YANDEX_API_KEY = process.env.YANDEX_API_KEY;
-const YANDEX_FOLDER_ID = process.env.YANDEX_FOLDER_ID;
+const API_KEY = process.env.YANDEX_API_KEY;
+const FOLDER_ID = process.env.YANDEX_FOLDER_ID;
 
-// Путь к файлу, который обновляем
 const TARGET_FILE = "./docs/SYSTEM_PIPELINE.md";
 
-// Чтение текущего содержимого
+if (!API_KEY || !FOLDER_ID) {
+  console.error("Missing Yandex credentials");
+  process.exit(1);
+}
+
+// Чтение старого файла
 let oldContent = "";
+
 if (fs.existsSync(TARGET_FILE)) {
   oldContent = fs.readFileSync(TARGET_FILE, "utf8");
 }
 
-// Payload для Yandex GPT
+// Prompt для AI
+const prompt = `
+Обнови файл SYSTEM_PIPELINE.md.
+
+Требования:
+- описать архитектуру AI pipeline
+- GitHub Actions
+- YandexGPT integration
+- структура модулей
+- CI/CD поток
+
+Ответ должен быть только содержимым markdown файла.
+`;
+
+// Payload
 const payload = {
-  modelUri: `gpt://${YANDEX_FOLDER_ID}/yandexgpt-lite`,
-  completionOptions: { temperature: 0.2, maxTokens: 1000 },
+  modelUri: `gpt://${FOLDER_ID}/yandexgpt-lite/latest`,
+  completionOptions: {
+    temperature: 0.2,
+    maxTokens: 1500
+  },
   messages: [
-    { role: "user", text: "Обнови SYSTEM_PIPELINE.md с актуальной структурой AI pipeline" }
+    {
+      role: "system",
+      text: "Ты инженер DevOps и AI pipeline."
+    },
+    {
+      role: "user",
+      text: prompt
+    }
   ]
 };
 
-// Retry-механизм
-async function callYandexGPT(payload) {
-  for (let i = 0; i < 3; i++) {
+// Retry функция
+async function callYandexGPT() {
+
+  const MAX_RETRIES = 3;
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+
     try {
-      const res = await fetch(YANDEX_API_URL, {
+
+      const response = await fetch(API_URL, {
         method: "POST",
         headers: {
-          "Authorization": `Api-Key ${YANDEX_API_KEY}`,
+          "Authorization": `Api-Key ${API_KEY}`,
           "Content-Type": "application/json",
-          "x-folder-id": YANDEX_FOLDER_ID
+          "x-folder-id": FOLDER_ID
         },
         body: JSON.stringify(payload)
       });
-      if (res.ok) return await res.json();
-    } catch (e) {}
-    await new Promise(r => setTimeout(r, 3000));
+
+      const text = await response.text();
+
+      if (!response.ok) {
+        console.error("API error:", response.status);
+        console.error(text);
+        throw new Error("Yandex API error");
+      }
+
+      const data = JSON.parse(text);
+
+      return data;
+
+    } catch (err) {
+
+      console.error(`Attempt ${attempt} failed:`, err.message);
+
+      if (attempt === MAX_RETRIES) {
+        throw err;
+      }
+
+      await new Promise(r => setTimeout(r, 3000 * attempt));
+    }
   }
-  throw new Error("Yandex GPT request failed after retries");
 }
 
-// Основная функция обновления файла
+// Обновление файла
 async function updateFile() {
+
   let data;
+
   try {
-    data = await callYandexGPT(payload);
-  } catch (e) {
-    console.error("Ошибка запроса к Yandex GPT:", e.message);
+    data = await callYandexGPT();
+  } catch (err) {
+    console.error("Yandex GPT request failed:", err.message);
     return;
   }
 
-  const updatedText = data?.result?.[0]?.content || "";
+  console.log("Raw response:", JSON.stringify(data, null, 2));
 
-  // Защита от пустого ответа
-  if (!updatedText || updatedText.trim().length < 20) {
-    console.log("AI ответ пустой. Файл не обновляется.");
+  const updatedText =
+    data?.result?.alternatives?.[0]?.message?.text || "";
+
+  if (!updatedText || updatedText.trim().length < 50) {
+    console.log("AI response empty — skipping update");
     return;
   }
 
-  // Проверка изменений
-  if (oldContent === updatedText) {
-    console.log("Изменений нет");
+  if (updatedText.trim() === oldContent.trim()) {
+    console.log("No changes detected");
     return;
   }
 
-  // Запись файла
   fs.writeFileSync(TARGET_FILE, updatedText, "utf8");
-  console.log(`${TARGET_FILE} обновлён через Яндекс GPT`);
 
-  // Commit изменений
+  console.log("File updated:", TARGET_FILE);
+
   try {
+
     execSync("git config user.name 'AI Pipeline'");
     execSync("git config user.email 'ai@pipeline.local'");
+
     execSync(`git add ${TARGET_FILE}`);
-    execSync(`git commit -m "Обновление SYSTEM_PIPELINE.md через Yandex GPT"`);
+
+    execSync(`git commit -m "AI: update SYSTEM_PIPELINE.md"`);
+
     execSync("git push");
-    console.log("Коммит изменений выполнен");
-  } catch (e) {
-    console.error("Ошибка при коммите:", e.message);
+
+    console.log("Changes pushed");
+
+  } catch (err) {
+
+    console.error("Git commit failed:", err.message);
   }
 }
 
-// Запуск
 updateFile();
