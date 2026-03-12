@@ -28,19 +28,37 @@ function findGsFiles(dir) {
   return results;
 }
 
-// УЛУЧШЕННЫЙ АНАЛИЗ (Ищет связи между твоими модулями)
+// УЛУЧШЕННЫЙ АНАЛИЗ (Ищет связи по вызовам И по аргументам данных)
 function analyzeGs(filePath) {
   try {
     const content = fs.readFileSync(filePath, "utf-8");
-    // Ищем объявленные функции
+    // 1. Ищем объявленные функции
     const functions = [...content.matchAll(/function\s+([a-zA-Z0-9_]+)\s*\(/g)].map(m => m[1]);
     
-    // Ищем вызовы твоих объектов-модулей (Estimate, Finance и т.д.)
+    // 2. Список твоих модулей (объектов)
     const internalModules = ["Estimate", "Technology", "Finance", "Schedule", "Materials", "Commerce", "AuditModule", "Utils", "Config"];
+    
+    // 3. Карта соответствия: какой объект данных принадлежит какому модулю
+    const dataObjects = {
+        "Estimate": "estimateResult",
+        "Technology": "technologyResult",
+        "Schedule": "scheduleResult",
+        "Finance": "financeResult"
+    };
+
     const dependencies = internalModules.filter(m => {
-        // Проверяем, что файл НЕ является самим этим модулем, но содержит его вызов
-        return !path.basename(filePath).toLowerCase().includes(m.toLowerCase()) && 
-               (content.includes(m + ".") || content.includes(m + "["));
+        // Проверяем, что файл НЕ является самим этим модулем
+        const isSelf = path.basename(filePath).toLowerCase().includes(m.toLowerCase());
+        if (isSelf) return false;
+
+        // Связь 1: Прямой вызов (например, Estimate.process)
+        const hasDirectCall = content.includes(m + ".") || content.includes(m + "[");
+        
+        // Связь 2: Использование данных (например, аргумент estimateResult)
+        const argumentName = dataObjects[m];
+        const hasDataDep = argumentName ? content.includes(argumentName) : false;
+
+        return hasDirectCall || hasDataDep;
     });
 
     return { functions, dependencies };
@@ -97,7 +115,7 @@ function moveAndIndex() {
   fs.writeFileSync(indexPath, indexLines.join("\n"), "utf-8");
   
   cleanUp(ROOT_DIR);
-  console.log(`✅ Индекс обновлен (с сохранением структуры): ${indexPath}`);
+  console.log(`✅ Индекс обновлен (с сохранением структуры и анализом данных): ${indexPath}`);
 }
 
 moveAndIndex();
