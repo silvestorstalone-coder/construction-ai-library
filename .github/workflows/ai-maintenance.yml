@@ -1,14 +1,14 @@
-name: AI Maintenance & Full Pipeline
+name: AI Maintenance & Documentation Update
 
 on:
   push:
     branches: [main]
   schedule:
-    - cron: "0 3 * * *" # Ночной режим в 03:00
-  workflow_dispatch: # ручной запуск
+    - cron: "0 3 * * *" # Ночной запуск в 03:00
+  workflow_dispatch:
 
 jobs:
-  ai-maintenance:
+  ai_maintenance:
     runs-on: ubuntu-latest
 
     env:
@@ -17,40 +17,32 @@ jobs:
       YANDEX_FOLDER_ID: ${{ secrets.YANDEX_FOLDER_ID }}
 
     steps:
-      # 1. Клонируем репозиторий
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Устанавливаем Node.js 24
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '24'
 
-      # 3. Устанавливаем зависимости
       - name: Install dependencies
         run: |
           npm install -g dependency-cruiser
           npm install node-fetch fs-extra
 
-      # 4. Перемещаем все .gs файлы в modules/
       - name: Move .gs files to modules
         run: node ai_tasks/move_gs_files.js
 
-      # 5. Проверка архитектуры
       - name: Run architecture check
         run: npx depcruise . --config .dependency-cruiser.cjs
 
-      # 6. Генерация MODULE_INDEX.md
       - name: Generate MODULE_INDEX.md
         run: node ai_tasks/generate_module_index.js
 
-      # 7. Генерация SYSTEM_PIPELINE.md через Yandex GPT
       - name: Update SYSTEM_PIPELINE.md
         run: node ai_runner.js
 
-      # 8. Commit и Push изменений
-      - name: Commit changes
+      - name: Commit and Push changes
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
