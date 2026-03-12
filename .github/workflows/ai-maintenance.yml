@@ -1,6 +1,8 @@
 name: AI Maintenance & Full Pipeline
+
 permissions:
   contents: write
+
 on:
   push:
     branches: [ main ]
@@ -29,6 +31,11 @@ jobs:
         run: |
           npm install -g dependency-cruiser
           npm install node-fetch fs-extra
+
+      - name: Debug GS files
+        run: |
+          echo "Searching for .gs files"
+          find . -name "*.gs"
 
       - name: Move and index .gs files
         run: node ai_tasks/move_and_index_gs.js
