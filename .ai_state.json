@@ -12,5 +12,7 @@
   "norms.gs",
   "profit.gs",
   "schedule.gs",
-  "technology.gs"
+  "technology.gs",
+  "test.gs",
+  "utils.gs"
 ]
