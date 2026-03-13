@@ -20,12 +20,24 @@
 - **Резерв**: Если работа не найдена, использовать норму **0.5 чел-час** на ед. изм.
 - **Оборудование**: Назначение техники на основе поля `equipment` из базы норм.
 
-### 📦 FINANCE (Экономика)
-- **Materials**: Сумма всех `(quantity * price)` из спецификации материалов.
-- **Labor**: Сумма всех `(LaborHours * HourlyRate)`. Если ставка пуста, использовать 500 р/ч.
-- **Equipment**: Стоимость эксплуатации машин из модуля Technology.
-- **Nклады (Overheads)**: Итоговая сумма (M+L+E) умножается на коэффициент **1.15** (+15% накладные и прибыль).
-- **Формула**: `Total = (Materials + Labor + Equipment) * 1.15`.
+### 📦 FINANCE (Экономика v2.0)
+- **Data Input**: Принимает `estimateResult` и `technologyResult`.
+- **Global Settings**: ОБЯЗАТЕЛЬНО запрашивать ставки через `config.gs` или `Settings`:
+  - `hourly_rate` (дефолт: 500)
+  - `tax_multiplier` (НДС/Налоги, дефолт: 1.20)
+  - `overhead_multiplier` (Накладные, дефолт: 1.15)
+- **Расчетная логика**:
+  1. **Labor**: `totalHours * hourly_rate`. Добавить проверку: если в `technologyResult` есть `customRates`, приоритет им.
+  2. **Materials**: Использовать `work.quantity * work.price` из каждой строки `totalWorksList`.
+  3. **Machinery**: Прямое получение суммы из `technologyResult.machineryCost`.
+- **Налоги и Прибыль**:
+  - `DirectCosts = Labor + Materials + Machinery`
+  - `WithOverheads = DirectCosts * overhead_multiplier`
+  - `FinalTotal = WithOverheads * tax_multiplier`
+- **Output Structure**: Возвращать объект с детализацией: 
+  `{ laborCost, materialsCost, machineryCost, overheadValue, taxValue, totalFinal, margin }`.
+- **Validation**: Если `totalFinal` равен 0 или NaN — выбрасывать ошибку в лог.
+
 
 ### 📦 SCHEDULE (Сроки)
 - **Длительность (дни)**: `TotalLaborHours / (WorkersCount * 8)`.
