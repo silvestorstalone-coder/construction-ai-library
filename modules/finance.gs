@@ -1,4 +1,3 @@
-// finance.gs
 var Finance = (function() {
 
   function process(estimateResult, technologyResult) {

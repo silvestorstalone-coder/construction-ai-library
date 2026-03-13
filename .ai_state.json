@@ -4,5 +4,7 @@
   "audit.gs",
   "commerce.gs",
   "config.gs",
-  "diagnostics.gs"
+  "diagnostics.gs",
+  "estimate.gs",
+  "finance.gs"
 ]
