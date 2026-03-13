@@ -1,55 +1,55 @@
-var Finance = (function() {
+// AI Refactored: 2026-03-13T18:15:14.102Z
 
-  function process(estimateResult, technologyResult) {
-    logInfo("Finance.process started.");
+const Finance = (() => {
+  const process = (estimateResult, technologyResult) => {
+    console.log('Finance.process started.');
 
     if (!technologyResult) {
-      throw new Error("Finance: нет данных Technology");
+      throw new Error('Finance: нет данных Technology');
     }
 
-    var totalHours = technologyResult.totalHours;
+    const totalHours = technologyResult.totalHours;
 
     // БАЗОВЫЕ НАСТРОЙКИ
-    var hourlyRate = 500;         // руб/час — вынести потом в Settings
-    var overheadPercent = 15;     // накладные %
+    const hourlyRate = 500; // руб/час — вынести потом в Settings
+    const overheadMultiplier = 1.15; // накладные
 
     // 1️⃣ ТРУД
-    var laborCost = totalHours * hourlyRate;
+    const laborCost = totalHours * hourlyRate;
 
     // 2️⃣ МАТЕРИАЛЫ
-    var materialsCost = 0;
+    let materialsCost = 0;
     if (estimateResult && estimateResult.totalWorksList) {
-      for (var i = 0; i < estimateResult.totalWorksList.length; i++) {
-        var work = estimateResult.totalWorksList[i];
+      for (let i = 0; i < estimateResult.totalWorksList.length; i++) {
+        const work = estimateResult.totalWorksList[i];
         materialsCost += work.quantity * work.price;
       }
     } else {
-      throw new Error("Finance: нет данных Estimate");
+      throw new Error('Finance: нет данных Estimate');
     }
 
     // 3️⃣ ТЕХНИКА
-    var machineryCost = technologyResult.machineryCost || 0;
+    const machineryCost = technologyResult.machineryCost || 0;
 
-    var directCost = laborCost + materialsCost + machineryCost;
+    const directCosts = laborCost + materialsCost + machineryCost;
 
     // 4️⃣ НАКЛАДНЫЕ
-    var overhead = directCost * overheadPercent / 100;
+    const overheadValue = directCosts * overheadMultiplier;
 
     // 5️⃣ СЕБЕСТОИМОСТЬ
-    var costPrice = directCost + overhead;
+    const costPrice = directCosts + overheadValue;
 
-    var result = {
-      laborCost: laborCost,
-      materialsCost: materialsCost,
-      machineryCost: machineryCost,
-      overhead: overhead,
-      costPrice: costPrice
+    const result = {
+      laborCost,
+      materialsCost,
+      machineryCost,
+      overheadValue,
+      costPrice
     };
 
-    logInfo("Finance завершён. Себестоимость: " + costPrice);
+    console.log(`Finance завершён. Себестоимость: ${costPrice}`);
     return result;
-  }
+  };
 
-  return { process: process };
-
+  return { process };
 })();
