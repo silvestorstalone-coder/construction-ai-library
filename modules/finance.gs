@@ -1,4 +1,4 @@
-// AI Refactored: 2026-03-13T18:15:14.102Z
+// AI Refactored: 2026-03-13T18:18:04.406Z
 
 const Finance = (() => {
   const process = (estimateResult, technologyResult) => {
@@ -11,17 +11,15 @@ const Finance = (() => {
     const totalHours = technologyResult.totalHours;
 
     // БАЗОВЫЕ НАСТРОЙКИ
-    const hourlyRate = 500; // руб/час — вынести потом в Settings
-    const overheadMultiplier = 1.15; // накладные
+    const { hourly_rate = 500, overhead_multiplier = 1.15 } = config.gs; // руб/час, накладные
 
     // 1️⃣ ТРУД
-    const laborCost = totalHours * hourlyRate;
+    const laborCost = totalHours * hourly_rate;
 
     // 2️⃣ МАТЕРИАЛЫ
     let materialsCost = 0;
     if (estimateResult && estimateResult.totalWorksList) {
-      for (let i = 0; i < estimateResult.totalWorksList.length; i++) {
-        const work = estimateResult.totalWorksList[i];
+      for (const work of estimateResult.totalWorksList) {
         materialsCost += work.quantity * work.price;
       }
     } else {
@@ -34,7 +32,7 @@ const Finance = (() => {
     const directCosts = laborCost + materialsCost + machineryCost;
 
     // 4️⃣ НАКЛАДНЫЕ
-    const overheadValue = directCosts * overheadMultiplier;
+    const overheadValue = directCosts * overhead_multiplier;
 
     // 5️⃣ СЕБЕСТОИМОСТЬ
     const costPrice = directCosts + overheadValue;
