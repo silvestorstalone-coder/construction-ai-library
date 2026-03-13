@@ -1,12 +1,3 @@
-// audit.gs
-/**
- * =====================================================
- * AUDIT MODULE v1.1
- * Production — Подробный аудит и контроль качества
- * Все заголовки на русском
- * =====================================================
- */
-
 var AuditModule = (function() {
 
     /**
@@ -137,8 +128,6 @@ var AuditModule = (function() {
         }
 
         // Центрирование цифр
-        sheet.getRange(2, 1, dataRows, 3).setHorizontalAlignment("CENTER");
-        sheet.getRange(2, 5, dataRows, 1).setHorizontalAlignment("CENTER");
         sheet.getRange(2, 6, dataRows, 3).setHorizontalAlignment("RIGHT");
         sheet.getRange(2, 10, dataRows, 3).setHorizontalAlignment("RIGHT");
 

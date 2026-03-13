@@ -1,4 +1,5 @@
 [
   "accounting.gs",
-  "aiModule.gs"
+  "aiModule.gs",
+  "audit.gs"
 ]
