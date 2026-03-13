@@ -1,4 +1,4 @@
-// AI Refactored: 2026-03-13T19:19:24.070Z
+// AI Refactored: 2026-03-13T19:27:52.778Z
 
 const Finance = (() => {
   const process = (estimateResult, technologyResult) => {
@@ -35,14 +35,14 @@ const Finance = (() => {
     const overheadValue = directCosts * overhead_multiplier;
 
     // 6️⃣ ИТОГОВАЯ СУММА С УЧЕТОМ НАЛОГОВ
-    const finalTotal = directCosts * overhead_multiplier * tax_multiplier;
+    const finalTotal = overheadValue * tax_multiplier;
 
     const result = {
       laborCost,
       materialsCost,
       machineryCost,
       overheadValue,
-      taxValue: finalTotal - directCosts * overhead_multiplier,
+      taxValue: finalTotal - overheadValue,
       totalFinal: finalTotal,
       margin: finalTotal - directCosts
     };
