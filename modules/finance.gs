@@ -1,4 +1,4 @@
-// AI Refactored: 2026-03-13T19:47:18.751Z
+// AI Refactored: 2026-03-13T19:53:19.221Z
 
 const Finance = (() => {
   const process = (estimateResult, technologyResult) => {
@@ -14,7 +14,10 @@ const Finance = (() => {
     const { hourly_rate = 500, overhead_multiplier = 1.15, tax_multiplier = 1.20 } = Config.get();
 
     // 1️⃣ ТРУД
-    const laborCost = totalHours * hourly_rate;
+    let laborCost = totalHours * hourly_rate;
+    if (technologyResult.customRates) {
+      laborCost = totalHours * technologyResult.customRates;
+    }
 
     // 2️⃣ МАТЕРИАЛЫ
     let materialsCost = 0;
