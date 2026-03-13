@@ -13,7 +13,6 @@ var Finance = (function() {
     // БАЗОВЫЕ НАСТРОЙКИ
     var hourlyRate = 500;         // руб/час — вынести потом в Settings
     var overheadPercent = 15;     // накладные %
-    var profitPercent = 20;       // прибыль %
 
     // 1️⃣ ТРУД
     var laborCost = totalHours * hourlyRate;
@@ -25,6 +24,8 @@ var Finance = (function() {
         var work = estimateResult.totalWorksList[i];
         materialsCost += work.price * work.quantity;
       }
+    } else {
+      throw new Error("Finance: нет данных Estimate");
     }
 
     // 3️⃣ ТЕХНИКА (пока 0)
@@ -38,20 +39,12 @@ var Finance = (function() {
     // 5️⃣ СЕБЕСТОИМОСТЬ
     var costPrice = directCost + overhead;
 
-    // 6️⃣ ПРИБЫЛЬ
-    var profit = costPrice * profitPercent / 100;
-
-    // 7️⃣ ЦЕНА ПРОДАЖИ
-    var salesPrice = costPrice + profit;
-
     var result = {
       laborCost: laborCost,
       materialsCost: materialsCost,
       machineryCost: machineryCost,
       overhead: overhead,
-      costPrice: costPrice,
-      profit: profit,
-      salesPrice: salesPrice
+      costPrice: costPrice
     };
 
     logInfo("Finance завершён. Себестоимость: " + costPrice);
