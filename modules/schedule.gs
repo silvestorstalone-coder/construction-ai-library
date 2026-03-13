@@ -1,5 +1,3 @@
-// schedule.gs
-
 var Schedule = (function() {
 
   function process(technologyOutput) {
@@ -21,12 +19,16 @@ var Schedule = (function() {
       machine.totalDays = durationDays;
     });
 
-    logInfo("Schedule.process completed. Duration: " + durationDays + " дней.");
+    // Критический путь
+    var criticalPath = technologyOutput.stages.reduce((acc, stage) => acc + stage.duration, 0);
+
+    logInfo("Schedule.process completed. Duration: " + durationDays + " дней. Critical Path: " + criticalPath + " дней.");
 
     return {
       durationDays: durationDays,
       workers: workers,
-      machineryUsage: machineryUsage
+      machineryUsage: machineryUsage,
+      criticalPath: criticalPath
     };
   }
 

@@ -10,5 +10,6 @@
   "main.gs",
   "menu.gs",
   "norms.gs",
-  "profit.gs"
+  "profit.gs",
+  "schedule.gs"
 ]
