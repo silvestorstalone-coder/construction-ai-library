@@ -1,4 +1,4 @@
-// AI Refactored: 2026-03-13T18:18:04.406Z
+// AI Refactored: 2026-03-13T18:38:27.838Z
 
 const Finance = (() => {
   const process = (estimateResult, technologyResult) => {
@@ -11,7 +11,7 @@ const Finance = (() => {
     const totalHours = technologyResult.totalHours;
 
     // БАЗОВЫЕ НАСТРОЙКИ
-    const { hourly_rate = 500, overhead_multiplier = 1.15 } = config.gs; // руб/час, накладные
+    const { hourly_rate = 500, overhead_multiplier = 1.15, tax_multiplier = 1.20 } = config.gs; // руб/час, накладные
 
     // 1️⃣ ТРУД
     const laborCost = totalHours * hourly_rate;
@@ -37,15 +37,19 @@ const Finance = (() => {
     // 5️⃣ СЕБЕСТОИМОСТЬ
     const costPrice = directCosts + overheadValue;
 
+    // 6️⃣ ИТОГОВАЯ СУММА С УЧЕТОМ НАЛОГОВ
+    const finalTotal = costPrice * tax_multiplier;
+
     const result = {
       laborCost,
       materialsCost,
       machineryCost,
       overheadValue,
-      costPrice
+      costPrice,
+      finalTotal
     };
 
-    console.log(`Finance завершён. Себестоимость: ${costPrice}`);
+    console.log(`Finance завершён. Итоговая сумма: ${finalTotal}`);
     return result;
   };
 
