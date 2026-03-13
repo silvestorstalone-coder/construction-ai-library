@@ -1,5 +1,5 @@
 # MODULE_INDEX.md
-Последнее обновление: 3/13/2026, 8:10:11 AM
+Последнее обновление: 3/13/2026, 6:38:26 PM
 > Этот файл является ЭТАЛОНОМ связей для ИИ.
 
 ## 📦 accounting.gs
@@ -31,15 +31,15 @@
 - **Зависимости (связи)**: автономен
 
 ## 📦 finance.gs
-- **Функции**: process
+- **Функции**: нет
 - **Зависимости (связи)**: Estimate ➔ Technology
 
 ## 📦 main.gs
-- **Функции**: runSubpodryadAI, _verifyModulesLoaded, _renderResults, logInfo, logWarning, logError
+- **Функции**: runSubpodryadAI, _verifyModulesLoaded, _renderResults
 - **Зависимости (связи)**: Estimate ➔ Technology ➔ Finance ➔ Schedule ➔ Materials ➔ Commerce ➔ AuditModule
 
 ## 📦 menu.gs
-- **Функции**: onOpen, menuEstimate, menuMyEstimate, menuTechnology, menuSchedule, menuWorkers, menuEquipment, menuMaterialsConsumption, menuMaterialsRequest, menuFinance, menuCommerce, menuKS2, menuInvoice, menuAct
+- **Функции**: onOpen, triggerAiRunner, showTokenPrompt, analyzeProjectStructure, menuEstimate, menuMyEstimate, menuTechnology, menuSchedule, menuWorkers, menuEquipment, menuMaterialsConsumption, menuMaterialsRequest, menuFinance, menuCommerce, menuKS2, menuInvoice, menuAct, runSubpodryadAI
 - **Зависимости (связи)**: автономен
 
 ## 📦 norms.gs
@@ -55,7 +55,7 @@
 - **Зависимости (связи)**: автономен
 
 ## 📦 technology.gs
-- **Функции**: process, getTechnologyForWork, isValidNorm, logInfo, logWarning, logError
+- **Функции**: process, getTechnologyForWork, isValidNorm
 - **Зависимости (связи)**: автономен
 
 ## 📦 test.gs
