@@ -1,11 +1,3 @@
-// technology.gs
-/*
- * =====================================================
- * TECHNOLOGY MODULE v3.2
- * PRODUCTION — исправлены ошибки, добавлено ограничение AI и использование normalizedName
- * =====================================================
- */
-
 var Technology = (function () {
 
   var normCache = {};
@@ -187,24 +179,6 @@ var Technology = (function () {
     if (!isFinite(value)) return false;
     if (value <= 0) return false;
     return true;
-  }
-
-  // =====================
-  // Логирование
-  // =====================
-  function logInfo(msg) {
-    if (typeof Logger !== "undefined") Logger.log("[TECH] " + msg);
-    else console.log("[TECH] " + msg);
-  }
-
-  function logWarning(msg) {
-    if (typeof Logger !== "undefined") Logger.log("[TECH_WARN] " + msg);
-    else console.warn("[TECH_WARN] " + msg);
-  }
-
-  function logError(msg) {
-    if (typeof Logger !== "undefined") Logger.log("[TECH_ERROR] " + msg);
-    else console.error("[TECH_ERROR] " + msg);
   }
 
   return { process: process };
