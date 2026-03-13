@@ -1,3 +1,6 @@
+/**
+ * ai_runner.js - v5.0 [Жёсткий регламент модернизации]
+ */
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
@@ -11,7 +14,6 @@ const INDEX_FILE = "./docs/MODULE_INDEX.md";
 const MODULES_DIR = "./modules/";
 const STATE_FILE = "./.ai_state.json";
 
-// --- ГЛОБАЛЬНАЯ НАСТРОЙКА GIT (FIX IDENTITY) ---
 function setupGit() {
   try {
     execSync("git config --global user.name 'github-actions[bot]'");
@@ -20,11 +22,10 @@ function setupGit() {
   } catch (e) { console.warn("⚠️ Git config warning"); }
 }
 
-// --- СИНХРОНИЗАЦИЯ ПАМЯТИ (FIX UNSTAGED CHANGES) ---
 function syncState() {
   try {
     console.log("🔄 Синхронизация репозитория...");
-    execSync("git reset --hard origin/main"); // Принудительная очистка
+    execSync("git reset --hard origin/main");
     execSync("git pull origin main --rebase");
     if (fs.existsSync(STATE_FILE)) {
       return JSON.parse(fs.readFileSync(STATE_FILE, "utf8"));
@@ -63,7 +64,7 @@ async function askAI(payload) {
 }
 
 async function runSafeCycle() {
-  console.log("🚀 AI-Инженер v4.5 [Стабильный режим]");
+  console.log("🚀 AI-Инженер v5.0 [Режим активной модернизации]");
   
   setupGit();
   let processed = syncState();
@@ -80,14 +81,20 @@ async function runSafeCycle() {
     const filePath = path.join(MODULES_DIR, file);
     const code = fs.readFileSync(filePath, "utf8");
 
-    console.log(`🛠 Модуль: ${file}`);
+    console.log(`🛠 Модернизация модуля: ${file}`);
 
     const payload = {
       modelUri: `gpt://${FOLDER_ID}/yandexgpt/latest`,
-      completionOptions: { temperature: 0.1, maxTokens: 2500 },
+      completionOptions: { temperature: 0.2, maxTokens: 4000 },
       messages: [
-        { role: "system", text: "Ты эксперт GAS. Пишешь только код." },
-        { role: "user", text: `ЭТАЛОН: ${pipeline}\nИНДЕКС: ${index}\nКОД: ${code}` }
+        { 
+          role: "system", 
+          text: "Ты ведущий инженер-программист GAS. Твоя задача — МОДЕРНИЗИРОВАТЬ код. " +
+                "Сравни КОД с ЭТАЛОНОМ (Pipeline). Если в коде отсутствуют функции или логика из ЭТАЛОНА, " +
+                "ПЕРЕПИШИ код полностью, внедрив современные стандарты ES6. " +
+                "Выдавай только чистый код без пояснений и Markdown-разметки." 
+        },
+        { role: "user", text: `ЭТАЛОН: ${pipeline}\n\nИНДЕКС: ${index}\n\nТЕКУЩИЙ КОД:\n${code}` }
       ]
     };
 
@@ -100,7 +107,7 @@ async function runSafeCycle() {
         fs.writeFileSync(filePath, newCode, "utf8");
         
         execSync(`git add ${filePath}`);
-        execSync(`git commit -m "AI upgrade: ${file}"`);
+        execSync(`git commit -m "AI upgrade: ${file} to v5.0"`);
         
         execSync("git pull --rebase origin main -X ours"); 
         
@@ -108,9 +115,9 @@ async function runSafeCycle() {
         saveState(processed);
         
         execSync("git push origin main");
-        console.log(`✅ ${file} успешно обновлен.`);
+        console.log(`✅ ${file} успешно модернизирован до v5.0.`);
       } else {
-        console.log(`ℹ️ ${file} не требует правок. Помечаем.`);
+        console.log(`ℹ️ ${file} соответствует эталону. Помечаем.`);
         processed.push(file);
         saveState(processed);
         execSync("git push origin main || true");
