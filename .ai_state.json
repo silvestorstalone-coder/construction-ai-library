@@ -2,5 +2,6 @@
   "accounting.gs",
   "aiModule.gs",
   "audit.gs",
-  "commerce.gs"
+  "commerce.gs",
+  "config.gs"
 ]
