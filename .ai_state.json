@@ -3,5 +3,6 @@
   "aiModule.gs",
   "audit.gs",
   "commerce.gs",
-  "config.gs"
+  "config.gs",
+  "diagnostics.gs"
 ]

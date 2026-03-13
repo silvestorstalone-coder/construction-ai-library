@@ -1,5 +1,3 @@
-// diagnostics.gs
-
 /**
  * Модуль логирования для Subpodryad AI
  * Создает лист LOG и записывает INFO, WARNING, ERROR
@@ -13,9 +11,11 @@ var Diagnostics = (function() {
     var sheet = ss.getSheetByName(logSheetName);
     if (!sheet) {
       sheet = ss.insertSheet(logSheetName);
+      sheet.getRange(1, 1, 1, 3).setValues([["Время", "Уровень", "Сообщение"]]);
+    } else {
+      sheet.clear();
+      sheet.getRange(1, 1, 1, 3).setValues([["Время", "Уровень", "Сообщение"]]);
     }
-    sheet.clear();
-    sheet.getRange(1, 1, 1, 3).setValues([["Время", "Уровень", "Сообщение"]]);
   }
 
   function log(level, message) {
