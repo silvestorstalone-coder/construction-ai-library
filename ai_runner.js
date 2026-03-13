@@ -1,5 +1,5 @@
 /**
- * ai_runner.js - v5.2 [FORCE REWRITE & DEBUG]
+ * ai_runner.js - v5.3 [MODERNIZATION & SANITY CHECK]
  */
 import fs from "fs";
 import path from "path";
@@ -40,7 +40,7 @@ async function askAI(payload) {
 }
 
 async function runSafeCycle() {
-  console.log("🚀 AI-Инженер v5.2 [FORCE MODE]");
+  console.log("🚀 AI-Инженер v5.3 [REFACTORING MODE]");
   setupGit();
   let processed = syncState();
   
@@ -51,25 +51,30 @@ async function runSafeCycle() {
   const files = fs.readdirSync(MODULES_DIR).filter(f => f.endsWith(".gs"));
 
   for (const file of files) {
-    // Принудительно обрабатываем finance.gs для теста, остальных по списку
-    if (processed.includes(file) && file !== 'finance.gs') continue;
+    // Обработка критических файлов и новых из списка
+    if (processed.includes(file) && file !== 'finance.gs' && file !== 'technology.gs') continue;
 
     const filePath = path.join(MODULES_DIR, file);
     const code = fs.readFileSync(filePath, "utf8");
 
-    console.log(`🛠 Анализ: ${file}`);
+    console.log(`🛠 Модернизация модуля: ${file}`);
 
     const payload = {
       modelUri: `gpt://${FOLDER_ID}/yandexgpt/latest`,
-      completionOptions: { temperature: 0.7, maxTokens: 4000 },
+      completionOptions: { temperature: 0.3, maxTokens: 4000 }, // Снижена температура для точности расчетов
       messages: [
         { 
           role: "system", 
-          text: `Ты — ведущий инженер. Твоя задача: ПЕРЕПИСАТЬ код на ES6+. 
-          ОБЯЗАТЕЛЬНО: Начни код с комментария // AI Refactored: ${new Date().toISOString()}.
-          Используй правила из ЭТАЛОНА. Выдавай ТОЛЬКО чистый код.` 
+          text: `Ты — ведущий инженер GAS. Твоя задача: ПОЛНОСТЬЮ ПЕРЕПИСАТЬ код на ES6+.
+          
+          ОБЯЗАТЕЛЬНЫЕ ТРЕБОВАНИЯ:
+          1. В начале добавь комментарий: // AI Refactored: ${new Date().toISOString()}
+          2. Модуль FINANCE: Используй Config.get('hourly_rate'), 'tax_multiplier', 'overhead_multiplier'. Итог: (DirectCosts * overhead) * tax.
+          3. Модуль TECHNOLOGY: Внедрить Sanity Check. Если норма на единицу > 100 чел/час — это ошибка, используй ГЭСН-аналоги. Дели сложные сметные строки на подобъекты.
+          4. ИСПОЛЬЗУЙ ЭТАЛОН: ${pipeline}
+          5. ВЫДАВАЙ ТОЛЬКО ЧИСТЫЙ КОД (без markdown и пояснений).` 
         },
-        { role: "user", text: `ЭТАЛОН: ${pipeline}\nИНДЕКС: ${index}\nКОД:\n${code}` }
+        { role: "user", text: `ТЕКУЩИЙ ИНДЕКС: ${index}\n\nКОД ДЛЯ ОБРАБОТКИ:\n${code}` }
       ]
     };
 
@@ -77,7 +82,6 @@ async function runSafeCycle() {
       const data = await askAI(payload);
       let newCode = data?.result?.alternatives?.[0]?.message?.text || "";
       
-      // LOG DEBUG
       console.log(`🔍 Ответ для ${file}: ${newCode.substring(0, 100).replace(/\n/g, ' ')}...`);
 
       newCode = newCode.replace(/```javascript/g, "").replace(/```/g, "").trim();
@@ -85,15 +89,15 @@ async function runSafeCycle() {
       if (newCode && newCode.length > 50 && newCode !== code) {
         fs.writeFileSync(filePath, newCode, "utf8");
         execSync(`git add ${filePath}`);
-        execSync(`git commit -m "AI upgrade: ${file} (v5.2 force)" || true`);
+        execSync(`git commit -m "AI upgrade: ${file} (v5.3 refactor)" || true`);
         execSync("git pull --rebase origin main -X ours"); 
         execSync("git push origin main");
         
         if (!processed.includes(file)) processed.push(file);
         fs.writeFileSync(STATE_FILE, JSON.stringify(processed, null, 2));
-        console.log(`✅ ${file} ОБНОВЛЕН.`);
+        console.log(`✅ ${file} успешно обновлен.`);
       } else {
-        console.log(`ℹ️ ${file}: Изменений нет или отказ ИИ.`);
+        console.log(`ℹ️ ${file}: Изменений не требуется.`);
       }
     } catch (err) {
       console.error(`❌ Ошибка на ${file}: ${err.message}`);
