@@ -1,4 +1,4 @@
-// AI Refactored: 2026-03-13T18:58:08.431Z
+// AI Refactored: 2026-03-13T19:19:24.070Z
 
 const Finance = (() => {
   const process = (estimateResult, technologyResult) => {
@@ -11,7 +11,7 @@ const Finance = (() => {
     const totalHours = technologyResult.totalHours;
 
     // БАЗОВЫЕ НАСТРОЙКИ
-    const { hourly_rate = 500, overhead_multiplier = 1.15, tax_multiplier = 1.20 } = config.gs; // руб/час, накладные
+    const { hourly_rate = 500, overhead_multiplier = 1.15, tax_multiplier = 1.20 } = Config.get();
 
     // 1️⃣ ТРУД
     const laborCost = totalHours * hourly_rate;
