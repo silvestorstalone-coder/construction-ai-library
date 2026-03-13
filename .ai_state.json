@@ -9,5 +9,6 @@
   "finance.gs",
   "main.gs",
   "menu.gs",
-  "norms.gs"
+  "norms.gs",
+  "profit.gs"
 ]

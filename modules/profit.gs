@@ -1,4 +1,3 @@
-// profit.gs
 var Profit = (function() {
 
   function process(financeOutput) {
