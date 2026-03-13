@@ -1,4 +1,4 @@
-// AI Refactored: 2026-03-13T19:53:26.705Z
+// AI Refactored: 2026-03-13T19:57:51.279Z
 
 const Technology = (() => {
   const normCache = {};
@@ -172,12 +172,7 @@ const Technology = (() => {
   }
 
   function isValidNorm(value) {
-    if (value === null || value === undefined) return false;
-    if (typeof value !== 'number') return false;
-    if (isNaN(value)) return false;
-    if (!isFinite(value)) return false;
-    if (value <= 0) return false;
-    return true;
+    return value > 0 && typeof value === 'number' && !isNaN(value) && isFinite(value);
   }
 
   return { process };
