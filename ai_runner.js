@@ -11,19 +11,25 @@ const INDEX_FILE = "./docs/MODULE_INDEX.md";
 const MODULES_DIR = "./modules/";
 const STATE_FILE = "./.ai_state.json";
 
-if (!API_KEY || !FOLDER_ID) {
-  console.error("❌ Missing Secrets");
-  process.exit(1);
+// --- ГЛОБАЛЬНАЯ НАСТРОЙКА GIT (FIX IDENTITY) ---
+function setupGit() {
+  try {
+    execSync("git config --global user.name 'github-actions[bot]'");
+    execSync("git config --global user.email 'github-actions[bot]@users.noreply.github.com'");
+    execSync("git config --global pull.rebase true");
+  } catch (e) { console.warn("⚠️ Git config warning"); }
 }
 
-// --- СИНХРОНИЗАЦИЯ ПАМЯТИ ---
+// --- СИНХРОНИЗАЦИЯ ПАМЯТИ (FIX UNSTAGED CHANGES) ---
 function syncState() {
   try {
+    console.log("🔄 Синхронизация репозитория...");
+    execSync("git reset --hard origin/main"); // Принудительная очистка
     execSync("git pull origin main --rebase");
     if (fs.existsSync(STATE_FILE)) {
       return JSON.parse(fs.readFileSync(STATE_FILE, "utf8"));
     }
-  } catch (e) { console.warn("⚠️ State sync warning"); }
+  } catch (e) { console.warn("⚠️ State sync warning:", e.message); }
   return [];
 }
 
@@ -31,7 +37,7 @@ function saveState(processed) {
   fs.writeFileSync(STATE_FILE, JSON.stringify(processed, null, 2));
   try {
     execSync(`git add ${STATE_FILE}`);
-    execSync(`git commit -m "AI: sync state" || true`);
+    execSync(`git commit -m "AI: sync state [skip ci]" || true`);
   } catch (e) {}
 }
 
@@ -57,9 +63,9 @@ async function askAI(payload) {
 }
 
 async function runSafeCycle() {
-  console.log("🚀 AI-Инженер v4.4 [Массовая обработка]");
+  console.log("🚀 AI-Инженер v4.5 [Стабильный режим]");
   
-  // 1. Актуализируем список обработанных файлов из облака
+  setupGit();
   let processed = syncState();
   
   const pipeline = fs.existsSync(PIPELINE_FILE) ? fs.readFileSync(PIPELINE_FILE, "utf8") : "";
@@ -69,7 +75,6 @@ async function runSafeCycle() {
   const files = fs.readdirSync(MODULES_DIR).filter(f => f.endsWith(".gs"));
 
   for (const file of files) {
-    // Повторная проверка прямо в цикле
     if (processed.includes(file)) continue;
 
     const filePath = path.join(MODULES_DIR, file);
@@ -94,25 +99,20 @@ async function runSafeCycle() {
       if (newCode && newCode.length > 50 && newCode !== code) {
         fs.writeFileSync(filePath, newCode, "utf8");
         
-        // --- ПОРЯДОК: COMMIT -> PULL -> PUSH ---
-        execSync("git config user.name 'github-actions[bot]'");
-        execSync("git config user.email 'github-actions[bot]@users.noreply.github.com'");
-        
         execSync(`git add ${filePath}`);
         execSync(`git commit -m "AI upgrade: ${file}"`);
         
-        // Попытка слияния с минимизацией конфликта в .ai_state.json
         execSync("git pull --rebase origin main -X ours"); 
         
         processed.push(file);
         saveState(processed);
         
         execSync("git push origin main");
-        console.log(`✅ ${file} готов.`);
+        console.log(`✅ ${file} успешно обновлен.`);
       } else {
+        console.log(`ℹ️ ${file} не требует правок. Помечаем.`);
         processed.push(file);
         saveState(processed);
-        console.log(`ℹ️ ${file} без изменений.`);
         execSync("git push origin main || true");
       }
     } catch (err) {
