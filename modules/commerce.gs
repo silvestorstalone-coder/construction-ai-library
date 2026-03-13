@@ -1,4 +1,3 @@
-// commerce.gs
 var Commerce = (function() {
 
   function process(financeResult) {
