@@ -1,5 +1,3 @@
-// norms.gs
-
 var Norms = (function() {
 
   // Базовый словарь норм
@@ -96,4 +94,4 @@ var Norms = (function() {
     s = s.toLowerCase();
     s = s.replace(/ё/g, "е");
     s = s.replace(/\b[ivxlcdm]+\s*(класс[а-я]*|категори[а-я]*|разряд[а-я]*|групп[а-я]*|тип[а-я]*)\b/gi, "");
-    s =
+    s = s.replace(/[^a

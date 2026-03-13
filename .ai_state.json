@@ -7,5 +7,7 @@
   "diagnostics.gs",
   "estimate.gs",
   "finance.gs",
-  "main.gs"
+  "main.gs",
+  "menu.gs",
+  "norms.gs"
 ]
