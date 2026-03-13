@@ -1,4 +1,4 @@
-// AI Refactored: 2026-03-13T18:38:27.838Z
+// AI Refactored: 2026-03-13T18:58:08.431Z
 
 const Finance = (() => {
   const process = (estimateResult, technologyResult) => {
@@ -34,19 +34,17 @@ const Finance = (() => {
     // 4️⃣ НАКЛАДНЫЕ
     const overheadValue = directCosts * overhead_multiplier;
 
-    // 5️⃣ СЕБЕСТОИМОСТЬ
-    const costPrice = directCosts + overheadValue;
-
     // 6️⃣ ИТОГОВАЯ СУММА С УЧЕТОМ НАЛОГОВ
-    const finalTotal = costPrice * tax_multiplier;
+    const finalTotal = directCosts * overhead_multiplier * tax_multiplier;
 
     const result = {
       laborCost,
       materialsCost,
       machineryCost,
       overheadValue,
-      costPrice,
-      finalTotal
+      taxValue: finalTotal - directCosts * overhead_multiplier,
+      totalFinal: finalTotal,
+      margin: finalTotal - directCosts
     };
 
     console.log(`Finance завершён. Итоговая сумма: ${finalTotal}`);
