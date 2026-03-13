@@ -1,4 +1,4 @@
-// AI Refactored: 2026-03-13T19:27:52.778Z
+// AI Refactored: 2026-03-13T19:32:10.810Z
 
 const Finance = (() => {
   const process = (estimateResult, technologyResult) => {
@@ -36,6 +36,10 @@ const Finance = (() => {
 
     // 6️⃣ ИТОГОВАЯ СУММА С УЧЕТОМ НАЛОГОВ
     const finalTotal = overheadValue * tax_multiplier;
+
+    if (finalTotal === 0 || isNaN(finalTotal)) {
+      throw new Error('Finance: итоговая сумма равна 0 или NaN');
+    }
 
     const result = {
       laborCost,
