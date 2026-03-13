@@ -1,5 +1,5 @@
 # MODULE_INDEX.md
-Последнее обновление: 3/13/2026, 7:52:37 AM
+Последнее обновление: 3/13/2026, 8:10:11 AM
 > Этот файл является ЭТАЛОНОМ связей для ИИ.
 
 ## 📦 accounting.gs
@@ -7,11 +7,11 @@
 - **Зависимости (связи)**: автономен
 
 ## 📦 aiModule.gs
-- **Функции**: classifyRow, callYandexGPT, parseAIResponse, _validateNorm, _getPropertyAsFloat, _getPropertyAsInt, getStats, resetStats, logInfo, logWarning, logError, logDebug
+- **Функции**: classifyRow, callYandexGPT, parseAIResponse, _validateNorm, _getPropertyAsFloat, _getPropertyAsInt, getStats, resetStats, logInfo
 - **Зависимости (связи)**: автономен
 
 ## 📦 audit.gs
-- **Функции**: createAudit, _formatAuditSheet, _addStatistics, getAuditSummary, logInfo, logWarning
+- **Функции**: createAudit, _formatAuditSheet, _addStatistics, getAuditSummary
 - **Зависимости (связи)**: Estimate ➔ Technology
 
 ## 📦 commerce.gs
@@ -27,12 +27,12 @@
 - **Зависимости (связи)**: автономен
 
 ## 📦 estimate.gs
-- **Функции**: process, detectHeaderRow, detectColumns, parseRows, buildStagesFromWorks, parseNumber, normalizeUnit, getUnitStats, rowHasData, log
+- **Функции**: process, detectHeaderRow, detectColumns, parseRows, buildStagesFromWorks, parseNumber
 - **Зависимости (связи)**: автономен
 
 ## 📦 finance.gs
 - **Функции**: process
-- **Зависимости (связи)**: Estimate ➔ Technology ➔ Schedule
+- **Зависимости (связи)**: Estimate ➔ Technology
 
 ## 📦 main.gs
 - **Функции**: runSubpodryadAI, _verifyModulesLoaded, _renderResults, logInfo, logWarning, logError
@@ -43,7 +43,7 @@
 - **Зависимости (связи)**: автономен
 
 ## 📦 norms.gs
-- **Функции**: normalizeWorkName, getNorm, addNorm, _cloneNorm, logInfo
+- **Функции**: normalizeWorkName
 - **Зависимости (связи)**: автономен
 
 ## 📦 profit.gs
