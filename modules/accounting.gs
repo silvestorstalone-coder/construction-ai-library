@@ -1,4 +1,3 @@
-// accounting.gs
 var Accounting = (function() {
 
   function process(financeOutput) {
