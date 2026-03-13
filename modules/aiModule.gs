@@ -1,4 +1,3 @@
-// ai_module.gs
 /**
  * =====================================================
  * AI MODULE v3.1 — YANDEX GPT FIX
@@ -311,4 +310,5 @@ var aiModule = (function() {
     // =====================================================
 
     function logInfo(msg) {
-        if (typeof Logger
+        Logger.log(msg);
+    }
