@@ -35,16 +35,68 @@ function onOpen() {
 }
 
 // === Пункты меню вызывают runSubpodryadAI с action ===
-function menuEstimate() { runSubpodryadAI('estimate'); }
-function menuMyEstimate() { runSubpodryadAI('myEstimate'); }
-function menuTechnology() { runSubpodryadAI('technology'); }
-function menuSchedule() { runSubpodryadAI('schedule'); }
-function menuWorkers() { runSubpodryadAI('workers'); }
-function menuEquipment() { runSubpodryadAI('equipment'); }
-function menuMaterialsConsumption() { runSubpodryadAI('materialsConsumption'); }
-function menuMaterialsRequest() { runSubpodryadAI('materialsRequest'); }
-function menuFinance() { runSubpodryadAI('finance'); }
-function menuCommerce() { runSubpodryadAI('commerce'); }
-function menuKS2() { runSubpodryadAI('ks2'); }
-function menuInvoice() { runSubpodryadAI('invoice'); }
-function menuAct() { runSubpodryadAI('act'); }
+function menuEstimate() { 
+  logInfo("Начало расчета сметы");
+  runSubpodryadAI('estimate'); 
+  logInfo("Завершение расчета сметы");
+}
+function menuMyEstimate() { 
+  logInfo("Начало расчета моей сметы");
+  runSubpodryadAI('myEstimate'); 
+  logInfo("Завершение расчета моей сметы");
+}
+function menuTechnology() { 
+  logInfo("Начало расчета трудозатрат");
+  runSubpodryadAI('technology'); 
+  logInfo("Завершение расчета трудозатрат");
+}
+function menuSchedule() { 
+  logInfo("Начало расчета графика");
+  runSubpodryadAI('schedule'); 
+  logInfo("Завершение расчета графика");
+}
+function menuWorkers() { 
+  logInfo("Начало расчета графика рабочих");
+  runSubpodryadAI('workers'); 
+  logInfo("Завершение расчета графика рабочих");
+}
+function menuEquipment() { 
+  logInfo("Начало расчета графика техники");
+  runSubpodryadAI('equipment'); 
+  logInfo("Завершение расчета графика техники");
+}
+function menuMaterialsConsumption() { 
+  logInfo("Начало расчета расхода материалов");
+  runSubpodryadAI('materialsConsumption'); 
+  logInfo("Завершение расчета расхода материалов");
+}
+function menuMaterialsRequest() { 
+  logInfo("Начало расчета заявок на материалы");
+  runSubpodryadAI('materialsRequest'); 
+  logInfo("Завершение расчета заявок на материалы");
+}
+function menuFinance() { 
+  logInfo("Начало расчета себестоимости");
+  runSubpodryadAI('finance'); 
+  logInfo("Завершение расчета себестоимости");
+}
+function menuCommerce() { 
+  logInfo("Начало формирования коммерческого предложения");
+  runSubpodryadAI('commerce'); 
+  logInfo("Завершение формирования коммерческого предложения");
+}
+function menuKS2() { 
+  logInfo("Начало обработки КС2");
+  runSubpodryadAI('ks2'); 
+  logInfo("Завершение обработки КС2");
+}
+function menuInvoice() { 
+  logInfo("Начало формирования счета на оплату");
+  runSubpodryadAI('invoice'); 
+  logInfo("Завершение формирования счета на оплату");
+}
+function menuAct() { 
+  logInfo("Начало формирования акта сверки");
+  runSubpodryadAI('act'); 
+  logInfo("Завершение формирования акта сверки");
+}

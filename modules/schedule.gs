@@ -5,16 +5,21 @@ var Schedule = (function() {
   function process(technologyOutput) {
     logInfo("Schedule.process started.");
 
-    var totalHours = technologyOutput.totalHours || 0;
+    var totalHours = technologyOutput.totalHours;
     var workers = technologyOutput.workers || 1;
+
+    if (!totalHours) {
+      logWarning("Total hours not provided in technology output.");
+      return;
+    }
 
     var durationDays = Math.ceil(totalHours / (workers * 8));
 
-    var machineryUsage = [{
-      name: "Экскаватор",
-      hoursPerDay: 8,
-      totalDays: durationDays
-    }];
+    var machineryUsage = technologyOutput.machinery || [];
+
+    machineryUsage.forEach(function(machine) {
+      machine.totalDays = durationDays;
+    });
 
     logInfo("Schedule.process completed. Duration: " + durationDays + " дней.");
 

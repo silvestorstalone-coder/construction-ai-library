@@ -10,8 +10,8 @@ var Commerce = (function() {
 
     var cp = {
       title: "Коммерческое предложение",
-      totalPrice: financeResult.salesPrice,
-      profitAmount: financeResult.profit,
+      totalPrice: financeResult.totalCost * 1.2, // Пример расчета с учетом наценки
+      profitAmount: financeResult.totalCost * 0.2, // Пример расчета прибыли
       terms: "50% предоплата, 50% по факту",
       validityDays: 30,
       date: new Date().toLocaleDateString('ru-RU')

@@ -94,13 +94,8 @@ var Utils = (function() {
  */
 function normalizeSheetValues(values) {
   if (!values || values.length === 0) {
-    logWarning("normalizeSheetValues: пустые данные листа — создаю заглушку");
-    return [[
-      "Обоснование",
-      "Наименование работ и затрат",
-      "Единица измерения",
-      "Количество"
-    ]];
+    logWarning("normalizeSheetValues: пустые данные листа — ошибка");
+    throw new Error("Пустые данные листа");
   }
 
   return values.map(row =>

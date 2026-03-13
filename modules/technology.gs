@@ -13,12 +13,11 @@ var Technology = (function () {
   var AI_LIMIT = 100; // Максимум AI запросов за один процесс
 
   function process(estimateOutput) {
-
     logInfo("=== Technology v3.2 STARTED ===");
 
     if (!estimateOutput || !estimateOutput.stages || estimateOutput.stages.length === 0) {
       logWarning("Technology: нет этапов.");
-      return { totalHours:0, workers:1, workStructure:[], stats:{} };
+      return { totalHours: 0, workers: 1, workStructure: [], stats: {} };
     }
 
     var totalHours = 0;
@@ -26,15 +25,15 @@ var Technology = (function () {
     var worksWithNorm = 0;
     var worksWithoutNorm = 0;
     var workStructure = [];
-    var normSources = { norms_dictionary:0, ai_fallback:0, not_found:0 };
+    var normSources = { norms_dictionary: 0, ai_fallback: 0, not_found: 0 };
 
-    estimateOutput.stages.forEach(function(stage) {
+    estimateOutput.stages.forEach(function (stage) {
       if (!stage.subsections || stage.subsections.length === 0) return;
 
-      stage.subsections.forEach(function(sub) {
+      stage.subsections.forEach(function (sub) {
         if (!sub.works || sub.works.length === 0) return;
 
-        sub.works.forEach(function(work) {
+        sub.works.forEach(function (work) {
           var workName = (work.normalizedName || work.name || "").trim();
           if (!workName) return;
 
@@ -65,7 +64,7 @@ var Technology = (function () {
             unit: work.unit || "",
             quantity: work.quantity || 0,
             price: work.price || 0,
-            norm: techData && isValidNorm(techData.normHoursPerUnit) ? techData.normHoursPerUnit :0,
+            norm: techData && isValidNorm(techData.normHoursPerUnit) ? techData.normHoursPerUnit : 0.5,
             hours: hours,
             normSource: source
           });
@@ -75,7 +74,7 @@ var Technology = (function () {
 
     // Критическая защита
     if (totalWorksProcessed > 0 && totalHours === 0) {
-      var coveragePercent = worksWithNorm > 0 ? Math.round((worksWithNorm / totalWorksProcessed) * 100) :0;
+      var coveragePercent = worksWithNorm > 0 ? Math.round((worksWithNorm / totalWorksProcessed) * 100) : 0;
 
       var errorMsg =
         "🚨 Technology CRITICAL: totalHours === 0 при " +
@@ -96,7 +95,7 @@ var Technology = (function () {
     }
 
     var workers = Math.max(1, Math.ceil(totalHours / 160));
-    var coveragePercent = totalWorksProcessed > 0 ? Math.round((worksWithNorm / totalWorksProcessed) * 100) :0;
+    var coveragePercent = totalWorksProcessed > 0 ? Math.round((worksWithNorm / totalWorksProcessed) * 100) : 0;
 
     logInfo(
       "=== Technology v3.2 COMPLETED ===\n" +
@@ -154,7 +153,7 @@ var Technology = (function () {
     }
 
     // 2. AI fallback
-    if (aiCallCount >= AI_LIMIT) return null; // Ограничение AI
+    if (aiCallCount >= AI_LIMIT) return { normHoursPerUnit: 0.5, _source: "ai_fallback" }; // Среднее значение
 
     try {
       if (typeof aiModule !== "undefined" && aiModule.classifyRow) {
@@ -178,7 +177,7 @@ var Technology = (function () {
       logWarning('AI ERROR для "' + workName + '": ' + e.message);
     }
 
-    return null;
+    return { normHoursPerUnit: 0.5, _source: "not_found" };
   }
 
   function isValidNorm(value) {

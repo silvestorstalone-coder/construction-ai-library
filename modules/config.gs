@@ -17,6 +17,7 @@ var Config = (function() {
     if (defaultSettings.hasOwnProperty(settingName)) {
       return defaultSettings[settingName];
     } else {
+      logWarning("Настройки с именем " + settingName + " не существует.");
       return null;
     }
   }

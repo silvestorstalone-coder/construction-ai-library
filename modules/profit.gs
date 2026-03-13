@@ -4,7 +4,7 @@ var Profit = (function() {
   function process(financeOutput) {
     logInfo("Profit.process started.");
 
-    var markup = 0.10; // 10% маржа
+    var markup = 0.15; // 15% маржа согласно эталону
     var salesPrice = financeOutput.totalCost * (1 + markup);
     var profitAmount = salesPrice - financeOutput.totalCost;
 

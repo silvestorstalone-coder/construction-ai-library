@@ -30,7 +30,7 @@ var Estimate = (function () {
   function process(sheet, options) {
     if (!sheet) throw new Error("Estimate.process: sheet не передан");
     options = options || {};
-    log("[Estimate v9.1] START");
+    logInfo("[Estimate v9.1] START");
 
     const raw = sheet.getDataRange().getValues();
     if (!raw || raw.length === 0) throw new Error("Estimate: пустой лист");
@@ -43,9 +43,9 @@ var Estimate = (function () {
 
     const columnMap = detectColumns(body);
 
-    log("[Estimate v9.1] Header row: " + (headerIndex + 1));
-    log("[Estimate v9.1] Data rows: " + body.length);
-    log("[Estimate v9.1] Column map: " + JSON.stringify(columnMap));
+    logInfo("[Estimate v9.1] Header row: " + (headerIndex + 1));
+    logInfo("[Estimate v9.1] Data rows: " + body.length);
+    logInfo("[Estimate v9.1] Column map: " + JSON.stringify(columnMap));
 
     const parsed = parseRows(body, headerIndex, columnMap);
     const stages = buildStagesFromWorks(parsed.works);
@@ -88,7 +88,7 @@ var Estimate = (function () {
       const rowStr = values[i].join("|").toLowerCase();
       // Если нашли ключевые слова — это шапка, на какой бы строке она ни была
       if (anchors.filter(a => rowStr.includes(a)).length >= 2) {
-        log("[Estimate] Header detected at row " + (i + 1));
+        logInfo("[Estimate] Header detected at row " + (i + 1));
         return i;
       }
     }
@@ -188,31 +188,4 @@ var Estimate = (function () {
   }
 
   function parseNumber(val) {
-    if (val === null || val === "") return NaN;
-    const cleaned = String(val).replace(/\s/g,"").replace(/,/g,".");
-    const num = Number(cleaned); return isNaN(num) ? NaN : num;
-  }
-
-  function normalizeUnit(unit) {
-    if (!unit) return "шт";
-    const u = String(unit).toLowerCase().trim();
-    return UNIT_ALIASES[u] || u || "шт";
-  }
-
-  function getUnitStats(works) {
-    const stats = {};
-    works.forEach(w=>{ const u = w.unit || "шт"; stats[u]=(stats[u]||0)+1; });
-    return stats;
-  }
-
-  function rowHasData(row) {
-    let nonEmpty = 0; row.forEach(cell=>{ if (cell !== "" && cell !== null) nonEmpty++; });
-    return nonEmpty >= 2;
-  }
-
-  function log(msg) {
-    if (typeof Logger !== "undefined") Logger.log(msg); else console.log(msg);
-  }
-
-  return { process:process };
-})();
+    if (

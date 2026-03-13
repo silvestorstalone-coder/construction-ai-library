@@ -1,14 +1,14 @@
 // finance.gs
 var Finance = (function() {
 
-  function process(estimateResult, technologyResult, scheduleResult) {
+  function process(estimateResult, technologyResult) {
     logInfo("Finance.process started.");
 
     if (!technologyResult) {
       throw new Error("Finance: нет данных Technology");
     }
 
-    var totalHours = technologyResult.totalHours || 0;
+    var totalHours = technologyResult.totalHours;
 
     // БАЗОВЫЕ НАСТРОЙКИ
     var hourlyRate = 500;         // руб/час — вынести потом в Settings
@@ -22,14 +22,14 @@ var Finance = (function() {
     if (estimateResult && estimateResult.totalWorksList) {
       for (var i = 0; i < estimateResult.totalWorksList.length; i++) {
         var work = estimateResult.totalWorksList[i];
-        materialsCost += work.price * work.quantity;
+        materialsCost += work.quantity * work.price;
       }
     } else {
       throw new Error("Finance: нет данных Estimate");
     }
 
-    // 3️⃣ ТЕХНИКА (пока 0)
-    var machineryCost = 0;
+    // 3️⃣ ТЕХНИКА
+    var machineryCost = technologyResult.machineryCost || 0;
 
     var directCost = laborCost + materialsCost + machineryCost;
 
