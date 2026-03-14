@@ -1,4 +1,4 @@
-// AI Refactored: 2026-03-14T12:24:57.586Z
+// AI Refactored: 2026-03-14T12:27:16.045Z
 
 const Materials = (() => {
   async function process(technologyResult) {
@@ -13,7 +13,7 @@ const Materials = (() => {
       // Запрашиваем ресурсы у "Полевого аналитика" на основе ГЭСН
       const resources = await fetchResourcesFromAI(work.name, work.code, work.quantity, work.unit);
 
-      if (resources && resources.materials) {
+      if (resources?.materials) {
         for (const mat of resources.materials) {
           materialsOrder.push({
             parentWork: work.name,
@@ -25,7 +25,7 @@ const Materials = (() => {
         }
       }
 
-      if (resources && resources.machinery) {
+      if (resources?.machinery) {
         machineryOrder.push({
           workName: work.name,
           machineType: resources.machinery,
