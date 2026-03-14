@@ -1,4 +1,4 @@
-// AI Refactored: 2026-03-14T12:22:59.465Z
+// AI Refactored: 2026-03-14T12:24:44.967Z
 
 const Finance = (() => {
   const process = (estimateResult, technologyResult) => {
@@ -11,13 +11,13 @@ const Finance = (() => {
     const totalHours = technologyResult.totalHours;
 
     // БАЗОВЫЕ НАСТРОЙКИ (Берем из Config)
-    const config = Config.get('hourly_rate', 'tax_multiplier', 'overhead_multiplier');
-    const hourly_rate = config.hourly_rate || 500;
-    const overhead_multiplier = config.overhead_multiplier || 1.15;
-    const tax_multiplier = config.tax_multiplier || 1.20;
+    const { hourly_rate, tax_multiplier, overhead_multiplier } = Config.get('hourly_rate', 'tax_multiplier', 'overhead_multiplier');
+    const hourlyRate = hourly_rate || 500;
+    const overheadMultiplier = overhead_multiplier || 1.15;
+    const taxMultiplier = tax_multiplier || 1.20;
 
     // 1️⃣ ТРУД (Себестоимость)
-    const laborCost = totalHours * hourly_rate;
+    const laborCost = totalHours * hourlyRate;
 
     // 2️⃣ МАТЕРИАЛЫ И ТЕХНИКА (Себестоимость)
     let directMaterialsCost = 0;
@@ -40,8 +40,8 @@ const Finance = (() => {
     const gpMarginFromEstimate = technologyResult.gp_margin_total || 0;
 
     // 5️⃣ НАКЛАДНЫЕ И НАЛОГИ (Наши внутренние)
-    const totalWithOverhead = ourDirectCosts * overhead_multiplier;
-    const finalTotalWithTaxes = totalWithOverhead * tax_multiplier;
+    const totalWithOverhead = ourDirectCosts * overheadMultiplier;
+    const finalTotalWithTaxes = totalWithOverhead * taxMultiplier;
 
     // 6️⃣ РАСЧЕТ ДЕЛЬТЫ (Критический показатель)
     // Дельта = (Заложенная в смете маржа) - (Наши налоги и накладные)
