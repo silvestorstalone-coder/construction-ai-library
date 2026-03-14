@@ -1,179 +1,549 @@
-/**
- * =====================================================
- * ESTIMATE MODULE v10.0 [PLAN v2.0 - Слоёный пирог]
- * База: v9.1 (Industrial - Fixed)
- * Добавлено: Look-back, Regex ГЭСН, gp_margin.
- * =====================================================
- */
+/*
+=====================================================
+ESTIMATE MODULE v12 INDUSTRIAL STABLE
+v9.1 + v10 + AI CLASSIFIER + SMART UNIT
+=====================================================
+*/
 
 var Estimate = (function () {
 
-  var FINANCIAL_KEYWORDS = [
-    "фот","фзп","зп","оплата","фонд оплаты",
-    "наклад","нр","накл","нормативные расходы",
-    "прибыл","сметная","цена","всего","итого",
-    "стоимость","сумма","основная зарплата"
-  ];
+var FINANCIAL_KEYWORDS = [
+"фот","фзп","зп","оплата","фонд оплаты",
+"наклад","нр","накл","нормативные расходы",
+"прибыл","сметная","цена","всего","итого",
+"стоимость","сумма","основная зарплата"
+];
 
-  // Ключевые слова для выделения маржи Генподрядчика (v2.2)
-  var GP_MARGIN_KEYWORDS = ["сметная прибыль", "нр", "сп", "накладные", "ндс", "лимитированные"];
+var GP_MARGIN_KEYWORDS = [
+"сметная прибыль","нр","сп","накладные",
+"ндс","лимитированные"
+];
 
-  var UNIT_ALIASES = {
-    "м3":"м3","куб.м":"м3","м³":"м3",
-    "м2":"м2","кв.м":"м2","м²":"м2",
-    "м.п.":"м.п.","пог.м":"м.п.","т":"т","кг":"кг","шт":"шт"
-  };
+var UNIT_ALIASES = {
+"м3":"м3","куб.м":"м3","м³":"м3",
+"м2":"м2","кв.м":"м2","м²":"м2",
+"м.п.":"м.п.","пог.м":"м.п.","погонный метр":"м.п.",
+"т":"т","тонна":"т","тн":"т",
+"кг":"кг","килограмм":"кг",
+"шт":"шт","штука":"шт","штук":"шт",
+"точка":"шт","комплект":"шт","комп":"шт",
+"л":"л","литр":"л",
+"м":"м.п."
+};
 
-  function process(sheet, options) {
-    if (!sheet) throw new Error("Estimate.process: sheet не передан");
-    
-    const raw = sheet.getDataRange().getValues();
-    if (!raw || raw.length === 0) throw new Error("Estimate: пустой лист");
+/*
+=====================================================
+WORK CLASSIFIER
+=====================================================
+*/
 
-    const headerIndex = detectHeaderRow(raw);
-    const body = raw.slice(headerIndex + 1).filter(rowHasData);
+var WORK_CLASSIFIER = {
 
-    if (body.length === 0) throw new Error("Estimate: после заголовка нет данных");
+earth:[
+"грунт","котлован","транше","разработка"
+],
 
-    const columnMap = detectColumns(body);
+concrete:[
+"бетон","армирование","опалубк"
+],
 
-    // Вызываем обновленный парсер с поддержкой Плана v2.0
-    const parsed = parseRows(body, headerIndex, columnMap);
-    const stages = buildStagesFromWorks(parsed.works);
+road:[
+"асфальт","щебень","дорожн"
+],
 
-    if (parsed.works.length === 0) {
-      throw new Error("Estimate CRITICAL: не найдено работ. Проверьте Количество!");
-    }
+electric:[
+"кабель","щит","провод","освещен"
+],
 
-    return {
-      type: "complex_v2",
-      stages: stages,
-      totalWorksList: parsed.works,
-      gp_margin_total: parsed.gp_margin_total, // Новое поле v2.0
-      diagnostics: {
-        totalDataRows: body.length,
-        worksCount: parsed.works.length,
-        coveragePercent: Math.round((parsed.works.length / body.length) * 100)
-      }
-    };
-  }
+finishing:[
+"штукатур","окраск","шпаклевк","облицовк"
+]
 
-  function detectHeaderRow(values) {
-    const anchors = ["наименование", "ед.изм", "количество", "кол-во", "обоснование"];
-    for (let i = 0; i < Math.min(values.length, 100); i++) {
-      const rowStr = values[i].join("|").toLowerCase();
-      if (anchors.filter(a => rowStr.includes(a)).length >= 2) return i;
-    }
-    return 0;
-  }
+};
 
-  // ТВОЯ ОРИГИНАЛЬНАЯ ЛОГИКА СТАТ-АНАЛИЗА (v9.1) - СОХРАНЕНА ПОЛНОСТЬЮ
-  function detectColumns(rows) {
-    if (!rows || rows.length === 0) return { name:0, quantity:null, price:null, unit:null };
-    const sampleSize = Math.min(rows.length, 50);
-    const colCount = rows[0].length;
-    const stats = [];
-    for (let c = 0; c < colCount; c++) {
-      let numericCount = 0; let textLongCount = 0; let shortTextCount = 0;
-      const shortTextUniqueValues = new Set();
-      for (let r = 0; r < sampleSize; r++) {
-        const val = rows[r][c];
-        if (val === "" || val === null) continue;
-        const num = parseNumber(val);
-        if (!isNaN(num) && num !== 0) { numericCount++; }
-        else {
-          const str = String(val).trim();
-          if (str.length > 20) textLongCount++;
-          if (str.length > 0 && str.length <= 15) { shortTextCount++; shortTextUniqueValues.add(str.toLowerCase()); }
-        }
-      }
-      stats.push({ index: c, numericCount, textLongCount, shortTextCount, shortTextUniqueRatio: shortTextCount > 0 ? shortTextUniqueValues.size / shortTextCount : 0 });
-    }
-    const nameCol = [...stats].sort((a,b) => b.textLongCount - a.textLongCount)[0]?.index || 0;
-    const numericColsCandidates = stats.filter(s => s.numericCount > 5).sort((a,b) => b.numericCount - a.numericCount);
-    const quantityCol = numericColsCandidates[0]?.index ?? null;
-    const priceCol = numericColsCandidates[1]?.index ?? null;
-    let bestUnitCol = null; let minRatio = Infinity;
-    stats.forEach(s => {
-      if (s.index === nameCol || s.index === quantityCol || s.index === priceCol) return;
-      if (s.shortTextCount > 5 && s.shortTextUniqueRatio < minRatio) {
-          minRatio = s.shortTextUniqueRatio; bestUnitCol = s.index;
-      }
-    });
-    return { name: nameCol, quantity: quantityCol, price: priceCol, unit: bestUnitCol };
-  }
+function classifyWork(name){
 
-  function parseRows(body, headerRowIndex, columnMap) {
-    const works = [];
-    let gp_margin_total = 0;
-    let currentSection = "Общий этап";
-    let lastValidName = ""; // Для Look-back logic
+var lower = name.toLowerCase();
 
-    body.forEach((row, i) => {
-      const rawRowIndex = headerRowIndex + 1 + i;
-      let name = String(row[columnMap.name] || "").trim();
-      const lower = name.toLowerCase();
-      const quantity = parseNumber(row[columnMap.quantity]);
-      const price = parseNumber(row[columnMap.price]);
+for (var type in WORK_CLASSIFIER){
 
-      // 1. Look-back logic (v2.2): если ячейка пуста, но есть цифры - берем имя сверху
-      if (name === "" && !isNaN(quantity) && quantity > 0) {
-        name = lastValidName;
-      } else if (name !== "") {
-        lastValidName = name;
-      }
+var patterns = WORK_CLASSIFIER[type];
 
-      if (!name) return;
+for (var i=0;i<patterns.length;i++){
 
-      // 2. Слой Гены (Маржа/Налоги)
-      if (GP_MARGIN_KEYWORDS.some(kw => lower.includes(kw))) {
-        if (!isNaN(price)) gp_margin_total += price;
-        return;
-      }
+if (lower.indexOf(patterns[i]) !== -1)
+return type;
 
-      if (lower.startsWith("раздел") || lower.startsWith("глава")) {
-        currentSection = name; return;
-      }
+}
 
-      // 3. Слой Ядра (Техническая работа)
-      if (!isNaN(quantity) && quantity > 0) {
-        const codeMatch = name.match(/[а-яА-Я]+\s?\d+-\d+-\d+-\d+/); // Regex ГЭСН
-        
-        works.push({
-          rawRowIndex,
-          section: currentSection,
-          name: name,
-          code: codeMatch ? codeMatch[0] : null,
-          unit: normalizeUnit(String(row[columnMap.unit] || "")),
-          quantity: quantity,
-          gp_price: isNaN(price) ? 0 : price,
-          originalRow: row
-        });
-      }
-    });
-    return { works, gp_margin_total };
-  }
+}
 
-  function buildStagesFromWorks(works) {
-    const map = {};
-    works.forEach(w => {
-      if (!map[w.section]) map[w.section] = { name: w.section, works: [] };
-      map[w.section].works.push(w);
-    });
-    return Object.values(map);
-  }
+return "other";
 
-  function parseNumber(val) {
-    if (val === "" || val === null) return NaN;
-    return Number(String(val).replace(/\s/g, "").replace(",", "."));
-  }
+}
 
-  function normalizeUnit(u) {
-    const clean = u.toLowerCase().trim();
-    return UNIT_ALIASES[clean] || clean || "шт";
-  }
+/*
+=====================================================
+SMART UNIT
+=====================================================
+*/
 
-  function rowHasData(r) { return r.some(c => c !== "" && c !== null); }
+function detectUnitFallback(name){
 
-  return { process: process };
+var lower = name.toLowerCase();
+
+if (lower.indexOf("кабель")!==-1) return "м.п.";
+if (lower.indexOf("труба")!==-1) return "м.п.";
+
+if (lower.indexOf("бетон")!==-1) return "м3";
+if (lower.indexOf("грунт")!==-1) return "м3";
+
+if (lower.indexOf("плитка")!==-1) return "м2";
+if (lower.indexOf("штукатур")!==-1) return "м2";
+
+return "шт";
+
+}
+
+/*
+=====================================================
+MAIN
+=====================================================
+*/
+
+function process(sheet){
+
+if (!sheet)
+throw new Error("Estimate.process: sheet не передан");
+
+var raw = sheet.getDataRange().getValues();
+
+if (!raw || raw.length===0)
+throw new Error("Estimate: пустой лист");
+
+var headerIndex = detectHeaderRow(raw);
+
+var body = raw.slice(headerIndex+1).filter(rowHasData);
+
+if (body.length===0)
+throw new Error("Estimate: после заголовка нет данных");
+
+var columnMap = detectColumns(body);
+
+var parsed = parseRows(body,headerIndex,columnMap);
+
+var stages = buildStages(parsed.works);
+
+return {
+
+type:"complex",
+
+stages:stages,
+
+totalWorksList:parsed.works,
+totalWorks:parsed.works.length,
+
+worksFlat:parsed.works,
+
+gp_margin_total:parsed.gp_margin_total,
+
+financialRows:parsed.financialRows,
+unclassifiedRows:parsed.unclassifiedRows
+
+};
+
+}
+
+/*
+=====================================================
+ROW PARSER
+=====================================================
+*/
+
+function parseRows(body,headerRowIndex,columnMap){
+
+var works=[];
+var financialRows=[];
+var unclassifiedRows=[];
+
+var gp_margin_total=0;
+
+var currentSection="Общий этап";
+var currentSubsection="Без подраздела";
+
+var lastValidName="";
+
+body.forEach(function(row,i){
+
+var rawRowIndex = headerRowIndex+1+i;
+
+var name = String(row[columnMap.name]||"").trim();
+
+var quantity=parseNumber(row[columnMap.quantity]);
+var price=parseNumber(row[columnMap.price]);
+
+if(name==="" && !isNaN(quantity) && quantity>0)
+name=lastValidName;
+else if(name!=="")
+lastValidName=name;
+
+if(!name){
+
+unclassifiedRows.push({
+rawRowIndex:rawRowIndex,
+type:"empty_name_cell",
+originalRow:row
+});
+
+return;
+
+}
+
+var lower=name.toLowerCase();
+
+if(
+FINANCIAL_KEYWORDS.some(function(k){return lower.indexOf(k)!==-1}) ||
+GP_MARGIN_KEYWORDS.some(function(k){return lower.indexOf(k)!==-1})
+){
+
+if(!isNaN(price))
+gp_margin_total+=price;
+
+financialRows.push({
+rawRowIndex:rawRowIndex,
+name:name,
+value:isNaN(price)?0:price
+});
+
+return;
+
+}
+
+if(lower.indexOf("раздел")===0 || lower.indexOf("глава")===0){
+
+currentSection=name;
+currentSubsection="Без подраздела";
+
+return;
+
+}
+
+if(!isNaN(quantity) && quantity>0){
+
+var rawUnit = String(row[columnMap.unit]||"");
+
+var normalizedUnit = normalizeUnit(rawUnit);
+
+if(!normalizedUnit)
+normalizedUnit = detectUnitFallback(name);
+
+var normalizedName =
+(typeof Norms!=="undefined" && Norms.normalizeWorkName)
+? Norms.normalizeWorkName(name)
+: name.toLowerCase();
+
+var codeMatch =
+name.match(/[А-ЯA-Zа-яa-z]*\s?\d+-\d+-\d+-\d+/);
+
+works.push({
+
+rawRowIndex:rawRowIndex,
+
+section:currentSection,
+subsection:currentSubsection,
+
+name:name,
+normalizedName:normalizedName,
+
+code:codeMatch ? codeMatch[0] : null,
+
+unit:normalizedUnit,
+
+quantity:quantity,
+
+price:isNaN(price)?0:price,
+
+workType:classifyWork(name),
+
+confidence:"from_estimate"
+
+});
+
+return;
+
+}
+
+unclassifiedRows.push({
+
+rawRowIndex:rawRowIndex,
+type:"unclassified",
+name:name
+
+});
+
+});
+
+return{
+works:works,
+financialRows:financialRows,
+unclassifiedRows:unclassifiedRows,
+gp_margin_total:gp_margin_total
+};
+
+}
+
+/*
+=====================================================
+STAGES
+=====================================================
+*/
+
+function buildStages(works){
+
+var map={};
+
+works.forEach(function(w){
+
+var stage=w.section || "Общий этап";
+var sub=w.subsection || "Без подраздела";
+
+if(!map[stage])
+map[stage]={name:stage,subsections:{}};
+
+if(!map[stage].subsections[sub])
+map[stage].subsections[sub]={name:sub,works:[]};
+
+map[stage].subsections[sub].works.push(w);
+
+});
+
+return Object.values(map).map(function(s){
+
+return{
+
+name:s.name,
+subsections:Object.values(s.subsections)
+
+};
+
+});
+
+}
+
+/*
+=====================================================
+UTILS
+=====================================================
+*/
+
+function parseNumber(val){
+
+if(val===null || val==="")
+return NaN;
+
+var cleaned = String(val)
+.replace(/\s/g,"")
+.replace(/,/g,".");
+
+var num = Number(cleaned);
+
+return isNaN(num)?NaN:num;
+
+}
+
+function normalizeUnit(unit){
+
+if(!unit) return "";
+
+var u = String(unit).toLowerCase().trim();
+
+return UNIT_ALIASES[u] || "";
+
+}
+
+/*
+=====================================================
+HEADER DETECTION
+=====================================================
+*/
+
+function detectHeaderRow(values){
+
+for(var i=0;i<Math.min(values.length,50);i++){
+
+var row=values[i];
+
+var nonEmpty=0;
+var textCells=0;
+
+row.forEach(function(cell){
+
+if(cell!=="" && cell!==null){
+
+nonEmpty++;
+
+if(isNaN(parseNumber(cell)))
+textCells++;
+
+}
+
+});
+
+if(nonEmpty>=4 && textCells>=3)
+return i;
+
+}
+
+return 0;
+
+}
+
+/*
+=====================================================
+COLUMN DETECTION (FULL v9 ALGORITHM)
+=====================================================
+*/
+
+function detectColumns(rows){
+
+if(!rows || rows.length===0)
+return {name:0,quantity:null,price:null,unit:null};
+
+var sampleSize = Math.min(rows.length,50);
+var colCount = rows[0].length;
+
+var stats=[];
+
+for(var c=0;c<colCount;c++){
+
+var numericCount=0;
+var textLongCount=0;
+var shortTextCount=0;
+
+var shortTextUniqueValues=new Set();
+var numericSum=0;
+
+for(var r=0;r<sampleSize;r++){
+
+var val=rows[r][c];
+
+if(val===""||val===null) continue;
+
+var num=parseNumber(val);
+
+if(!isNaN(num) && num!==0){
+
+numericCount++;
+numericSum+=num;
+
+}else{
+
+var str=String(val).trim();
+
+if(str.length>20) textLongCount++;
+
+if(str.length>0 && str.length<=15){
+
+shortTextCount++;
+shortTextUniqueValues.add(str.toLowerCase());
+
+}
+
+}
+
+}
+
+stats.push({
+
+index:c,
+numericCount:numericCount,
+textLongCount:textLongCount,
+shortTextCount:shortTextCount,
+
+shortTextUniqueRatio:
+shortTextCount>0
+? shortTextUniqueValues.size/shortTextCount
+:0,
+
+avgNumber:
+numericCount>0
+? numericSum/numericCount
+:0
+
+});
+
+}
+
+var nameCol =
+stats.slice().sort(function(a,b){
+return b.textLongCount-a.textLongCount;
+})[0].index;
+
+var numericCols =
+stats.filter(function(s){return s.numericCount>5})
+.sort(function(a,b){
+return b.numericCount-a.numericCount;
+});
+
+var quantityCol = numericCols[0] ? numericCols[0].index : null;
+var priceCol = numericCols[1] ? numericCols[1].index : null;
+
+var bestUnitCol=null;
+var minRatio=Infinity;
+var maxShort=-1;
+
+stats.forEach(function(s){
+
+if(
+s.index===nameCol ||
+s.index===quantityCol ||
+s.index===priceCol
+) return;
+
+if(s.shortTextCount>5){
+
+if(
+s.shortTextUniqueRatio<minRatio ||
+(
+s.shortTextUniqueRatio===minRatio &&
+s.shortTextCount>maxShort
+)
+){
+
+minRatio=s.shortTextUniqueRatio;
+maxShort=s.shortTextCount;
+bestUnitCol=s.index;
+
+}
+
+}
+
+});
+
+return{
+name:nameCol,
+quantity:quantityCol,
+price:priceCol,
+unit:bestUnitCol
+};
+
+}
+
+function rowHasData(row){
+
+var nonEmpty=0;
+
+row.forEach(function(cell){
+
+if(cell!=="" && cell!==null)
+nonEmpty++;
+
+});
+
+return nonEmpty>=2;
+
+}
+
+return {process:process};
+
 })();
