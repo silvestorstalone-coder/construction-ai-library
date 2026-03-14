@@ -1,0 +1,64 @@
+/**
+ * Output.gs - v1.0 [Final Data Rendering]
+ * Отрисовка итогов анализа: Смета + Технология + ИИ Ресурсы + Финансы
+ */
+
+const Output = (() => {
+  function render(data) {
+    console.log('=== Output v1.0 [Rendering] STARTED ===');
+    
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let reportSheet = ss.getSheetByName("АНАЛИЗ_ИИ");
+    
+    // Если листа нет — создаем, если есть — чистим
+    if (!reportSheet) {
+      reportSheet = ss.insertSheet("АНАЛИЗ_ИИ");
+    }
+    reportSheet.clear();
+    
+    const rows = [];
+    rows.push(["ОТЧЕТ ПОДРЯДЧИКА (Subpodryad AI)", "Дата: " + new Date().toLocaleString()]);
+    rows.push(["--------------------------------", "--------------------------------"]);
+    
+    // 1. Финансовый блок (Самый важный момент)
+    if (data.financeData) {
+      rows.push(["💰 ФИНАНСЫ (Дельта)", ""]);
+      rows.push(["Итоговая стоимость (Продажа):", data.financeData.totalFinal || 0]);
+      rows.push(["Себестоимость работ:", data.financeData.laborCost || 0]);
+      rows.push(["Себестоимость материалов:", data.financeData.materialsCost || 0]);
+      rows.push(["ЧИСТАЯ ПРИБЫЛЬ (DELTA):", data.financeData.netProfitDelta || 0]);
+      rows.push(["", ""]);
+    }
+
+    // 2. Сроки и Технология
+    if (data.techData && data.scheduleData) {
+      rows.push(["📅 СРОКИ И РЕСУРСЫ", ""]);
+      rows.push(["Трудозатраты (чел/час):", data.techData.totalHours || 0]);
+      rows.push(["Рекомендуемое кол-во рабочих:", data.techData.workers || 1]);
+      rows.push(["Срок выполнения (дней):", data.scheduleData.projectTotalDays || 0]);
+      rows.push(["", ""]);
+    }
+
+    // 3. Список материалов по ГЭСН (от ИИ)
+    if (data.supplyData && data.supplyData.materialsOrder) {
+      rows.push(["📦 МАТЕРИАЛЫ И ТЕХНИКА (AI ГЭСН)", ""]);
+      rows.push(["Материал", "Кол-во"]);
+      data.supplyData.materialsOrder.forEach(mat => {
+        rows.push([mat.materialName, mat.quantity + " " + mat.unit]);
+      });
+    }
+
+    // Запись данных в таблицу
+    if (rows.length > 0) {
+      reportSheet.getRange(1, 1, rows.length, 2).setValues(rows);
+      reportSheet.autoResizeColumns(1, 2);
+      
+      // Минимальное форматирование для "Важного момента"
+      reportSheet.getRange(6, 1, 1, 2).setBackground("#d9ead3").setFontWeight("bold"); // Строка с Дельтой
+    }
+
+    console.log('=== Output v1.0 COMPLETED ===');
+  }
+
+  return { render };
+})();
