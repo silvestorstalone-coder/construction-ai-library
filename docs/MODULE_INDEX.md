@@ -1,5 +1,5 @@
 # MODULE_INDEX.md
-Последнее обновление: 3/14/2026, 2:53:39 PM
+Последнее обновление: 3/14/2026, 5:05:31 PM
 > Этот файл является ЭТАЛОНОМ связей для ИИ.
 
 ## 📦 accounting.gs
@@ -59,7 +59,7 @@
 - **Зависимости (связи)**: Technology ➔ Config
 
 ## 📦 technology.gs
-- **Функции**: process, processWorks, getTechnologyForWork, isValidNorm
+- **Функции**: process, processWorks, getTechnologyForWork, isValidNorm, fuzzyMatch
 - **Зависимости (связи)**: автономен
 
 ## 📦 test.gs
