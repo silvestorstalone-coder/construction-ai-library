@@ -1,5 +1,5 @@
 # MODULE_INDEX.md
-Последнее обновление: 3/14/2026, 12:52:10 PM
+Последнее обновление: 3/14/2026, 2:53:39 PM
 > Этот файл является ЭТАЛОНОМ связей для ИИ.
 
 ## 📦 accounting.gs
@@ -27,7 +27,7 @@
 - **Зависимости (связи)**: автономен
 
 ## 📦 estimate.gs
-- **Функции**: process, detectHeaderRow, detectColumns, parseRows, buildStagesFromWorks, parseNumber, normalizeUnit, rowHasData
+- **Функции**: classifyWork, detectUnitFallback, process, parseRows, buildStages, parseNumber, normalizeUnit, detectHeaderRow, detectColumns, rowHasData
 - **Зависимости (связи)**: автономен
 
 ## 📦 finance.gs
