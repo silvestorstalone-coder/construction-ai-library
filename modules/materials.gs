@@ -1,4 +1,4 @@
-// AI Refactored: 2026-03-14T17:46:36.444Z
+// AI Refactored: 2026-03-14T18:30:53.198Z
 
 const Materials = (() => {
   async function process(technologyResult) {
