@@ -1,7 +1,4 @@
-/**
- * Finance.gs - v4.0 [MARGIN CONTROL]
- * AI Refactored: 2026-03-14 (Integrated Delta & GP Margin)
- */
+// AI Refactored: 2026-03-14T12:04:08.915Z
 
 const Finance = (() => {
   const process = (estimateResult, technologyResult) => {
@@ -14,7 +11,7 @@ const Finance = (() => {
     const totalHours = technologyResult.totalHours;
 
     // БАЗОВЫЕ НАСТРОЙКИ (Берем из Config)
-    const config = typeof Config !== 'undefined' ? Config.get() : {};
+    const config = Config.get('hourly_rate', 'tax_multiplier', 'overhead_multiplier');
     const hourly_rate = config.hourly_rate || 500;
     const overhead_multiplier = config.overhead_multiplier || 1.15;
     const tax_multiplier = config.tax_multiplier || 1.20;
