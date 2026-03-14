@@ -1,16 +1,16 @@
 /**
  * =====================================================
- * MAIN MODULE v4.2 [AI-Integrated & Full Restoration]
- * Production — Полная интеграция всех слоев без урезаний
+ * MAIN MODULE v4.3 [AI-Integrated & Full Restoration]
+ * Production — Полная интеграция всех слоев БЕЗ УРЕЗАНИЙ
  * =====================================================
  */
 
-function runSubpodryadAI(action) {
+async function runSubpodryadAI(action) {
  const ui = SpreadsheetApp.getUi();
  const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
 
  logInfo("═══════════════════════════════════════════");
- logInfo(`🚀 START:Subpodryad AI v4.2 - Action:${action}`);
+ logInfo(`🚀 START:Subpodryad AI v4.3 - Action:${action}`);
  logInfo(`📄 Sheet:${sheet.getName()}`);
  logInfo("═══════════════════════════════════════════");
 
@@ -42,7 +42,7 @@ function runSubpodryadAI(action) {
  logInfo(` - Financial rows:${estimateResult.metadata.financialRowsCount}`);
  logInfo(` - Unclassified:${estimateResult.metadata.unclassifiedRowsCount}`);
  
- // 🟠 ТВОЯ ДИАГНОСТИКА СОХРАНЕНА
+ // 🟠 ТВОЯ ДИАГНОСТИКА СОХРАНЕНА ПОЛНОСТЬЮ
  if (estimateResult.diagnostics) {
  logInfo(` - Coverage:${estimateResult.diagnostics.coveragePercent}%`);
  logInfo(` - Unit distribution:${JSON.stringify(estimateResult.diagnostics.unitDistribution)}`);
@@ -113,14 +113,18 @@ function runSubpodryadAI(action) {
  }
 
  // ===========================
- // 4️⃣ MATERIALS (v1.0 - РЕСУРСЫ + НЮАНСЫ)
+ // 4️⃣ MATERIALS (v5.3 - AI INTEGRATED)
  // ===========================
  logInfo("🛠️ Step 4:Materials & Logistics...");
  try {
  if (typeof Materials !== 'undefined' && Materials.process) {
- // Новая логика:извлекаем по ГЭСН с проверкой нюансов (бетононасос и др.)
- supplyData = Materials.process(technologyOutput);
+ // КРИТИЧЕСКОЕ ИЗМЕНЕНИЕ: await для работы с AI
+ supplyData = await Materials.process(technologyOutput);
+ if (supplyData && supplyData.materialsOrder) {
  logInfo(`✅ Materials calculated:${supplyData.materialsOrder.length} positions`);
+ } else {
+ logWarning("⚠️ Materials returned null or empty");
+ }
  } else {
  logWarning("⚠️ Materials module not available");
  }
@@ -137,8 +141,8 @@ function runSubpodryadAI(action) {
  throw new Error("Finance module not loaded");
  }
  
- // Передаем все 3 параметра для расчета Дельты
- financeResult = Finance.process(estimateResult,technologyOutput,scheduleOutput);
+ // Передаем данные включая supplyData
+ financeResult = Finance.process(estimateResult,technologyOutput,scheduleOutput,supplyData);
  
  logInfo(`✅ Finance completed:`);
  logInfo(` - Labor cost:${financeResult.laborCost || 0}`);
@@ -202,7 +206,6 @@ function runSubpodryadAI(action) {
  }
 }
 
-// ТВОИ HELPER FUNCTIONS СОХРАНЕНЫ ПОЛНОСТЬЮ
 function _verifyModulesLoaded() {
  var requiredModules = ['Estimate','Technology','Finance','Materials','Schedule','Output'];
  for (var i = 0; i < requiredModules.length; i++) {
@@ -235,7 +238,6 @@ function _renderResults(action,estimateResult,technologyOutput,financeResult) {
  } catch (e) { logWarning(`⚠️ Results rendering skipped:${e.message}`); }
 }
 
-// ЛОГГЕРЫ СОХРАНЕНЫ
 function logInfo(msg) { Logger.log('[INFO] ' + msg); }
 function logWarning(msg) { Logger.log('[WARN] ' + msg); }
 function logError(msg) { Logger.log('[ERROR] ' + msg); }
