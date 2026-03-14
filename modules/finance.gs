@@ -1,81 +1,140 @@
-// AI Refactored: 2026-03-14T17:05:33.251Z
+/**
+ * Finance.gs - v5.3 INDUSTRIAL [FINAL SUPER VERSION]
+ * ЛОГИКА: Расчет себестоимости с batch-кэшированием, аналитикой, KPI и CI-ready логами
+ * СОВМЕСТИМОСТЬ: Estimate v12+, Technology v4.3+
+ */
 
 const Finance = (() => {
-  const process = (estimateResult, technologyResult) => {
-    console.log('=== Finance v4.0 [Margin Control] STARTED ===');
 
-    if (!technologyResult) {
-      throw new Error('Finance: нет данных Technology');
+  const DEFAULT_RATES = {
+    earth: 450,
+    concrete: 670,
+    road: 580,
+    electric: 850,
+    finishing: 950,
+    other: 500
+  };
+
+  const MAX_HOURS_PER_UNIT = 100;
+  const MIN_HOURS_PER_UNIT = 0.01;
+
+  const process = (estimateResult, technologyResult, config = {}) => {
+    console.log('=== Finance v5.3 [FINAL] STARTED ===');
+
+    if (!technologyResult || !technologyResult.workStructure) {
+      throw new Error('Finance: Technology.workStructure отсутствует');
     }
 
-    const totalHours = technologyResult.totalHours;
+    const overheadMultiplier = config.overhead_multiplier || 1.15;
+    const taxMultiplier = config.tax_multiplier || 1.20;
 
-    // БАЗОВЫЕ НАСТРОЙКИ (Берем из Config)
-    const { hourly_rate, tax_multiplier, overhead_multiplier } = Config.get('hourly_rate', 'tax_multiplier', 'overhead_multiplier');
-    const hourlyRate = hourly_rate || 500;
-    const overheadMultiplier = overhead_multiplier || 1.15;
-    const taxMultiplier = tax_multiplier || 1.20;
+    let totalLaborCost = 0;
+    let totalMaterialsCost = 0;
+    let totalMachineryCost = 0;
 
-    // 1️⃣ ТРУД (Себестоимость)
-    const laborCost = totalHours * hourlyRate;
+    const anomalyLog = [];
+    const workTypeSummary = {};
 
-    // 2️⃣ МАТЕРИАЛЫ И ТЕХНИКА (Себестоимость)
-    let directMaterialsCost = 0;
-    if (estimateResult && estimateResult.totalWorksList) {
-      // Здесь считаем только "грязную" цену материалов
-      for (const work of estimateResult.totalWorksList) {
-        directMaterialsCost += (work.quantity || 0) * (work.price || 0);
+    // Batch-кэширование: ускоряет повторные расчеты по одинаковым работам
+    const batchCache = new Map();
+
+    const detailedWorkCosts = technologyResult.workStructure.map(item => {
+      const cacheKey = `${item.name}_${item.workType}_${item.unit}`;
+      if (batchCache.has(cacheKey)) return batchCache.get(cacheKey);
+
+      // 1. Ставка по workType
+      const currentRate = (config.laborRates && config.laborRates[item.workType]) || DEFAULT_RATES[item.workType] || DEFAULT_RATES.other;
+
+      // 2. Sanity Check hours
+      let workHours = item.hours || 0;
+      if (workHours < MIN_HOURS_PER_UNIT) {
+        anomalyLog.push(`⚠️ Малые часы для "${item.name}": ${workHours}. Установлено MIN_HOURS_PER_UNIT`);
+        workHours = MIN_HOURS_PER_UNIT;
+      } else if (workHours > MAX_HOURS_PER_UNIT) {
+        anomalyLog.push(`⚠️ Чрезмерные часы для "${item.name}": ${workHours}. Обрезано до MAX_HOURS_PER_UNIT`);
+        workHours = MAX_HOURS_PER_UNIT;
       }
-    } else {
-      throw new Error('Finance: нет данных Estimate');
-    }
 
-    const machineryCost = technologyResult.machineryCost || 0;
+      const quantity = (item.quantity != null && item.quantity >= 0) ? item.quantity : 0;
+      const price = (item.price != null && item.price >= 0) ? item.price : 0;
 
-    // 3️⃣ ИТОГО ПРЯМЫЕ ЗАТРАТЫ (Наша реальная база)
-    const ourDirectCosts = laborCost + directMaterialsCost + machineryCost;
+      if (item.quantity < 0 || item.price < 0) {
+        anomalyLog.push(`⚠️ Отрицательная величина в "${item.name}" (qty: ${item.quantity}, price: ${item.price})`);
+      }
 
-    // 4️⃣ МАРЖА ГЕНПОДРЯДЧИКА (Из сметы заказчика)
-    // Это те деньги (НР, СП, НДС), которые УЖЕ заложены в смету
-    const gpMarginFromEstimate = technologyResult.gp_margin_total || 0;
+      const laborCost = workHours * currentRate;
+      const materialsCost = quantity * price;
+      const machineryCost = item.machineryCost || 0;
 
-    // 5️⃣ НАКЛАДНЫЕ И НАЛОГИ (Наши внутренние)
-    const totalWithOverhead = ourDirectCosts * overheadMultiplier;
-    const finalTotalWithTaxes = totalWithOverhead * taxMultiplier;
+      totalLaborCost += laborCost;
+      totalMaterialsCost += materialsCost;
+      totalMachineryCost += machineryCost;
 
-    // 6️⃣ РАСЧЕТ ДЕЛЬТЫ (Критический показатель)
-    // Дельта = (Заложенная в смете маржа) - (Наши налоги и накладные)
-    const internalExpenses = finalTotalWithTaxes - ourDirectCosts;
-    const netProfitDelta = gpMarginFromEstimate - internalExpenses;
+      // Сводка по workType
+      if (!workTypeSummary[item.workType]) workTypeSummary[item.workType] = { hours: 0, labor: 0, materials: 0, machinery: 0 };
+      workTypeSummary[item.workType].hours += workHours;
+      workTypeSummary[item.workType].labor += laborCost;
+      workTypeSummary[item.workType].materials += materialsCost;
+      workTypeSummary[item.workType].machinery += machineryCost;
 
-    if (isNaN(finalTotalWithTaxes)) {
-      throw new Error('Finance: критическая ошибка расчета (NaN)');
-    }
+      const detailedItem = {
+        name: item.name,
+        workType: item.workType,
+        hours: workHours,
+        rate: currentRate,
+        laborCost,
+        materialsCost,
+        machineryCost,
+        totalCost: laborCost + materialsCost + machineryCost
+      };
 
-    const result = {
-      laborCost,
-      materialsCost: directMaterialsCost,
-      machineryCost,
-      ourDirectCosts,
-      gpMarginFromEstimate, // Деньги от заказчика на "накладные"
-      internalExpenses,     // Наши реальные траты на "накладные"
-      netProfitDelta,       // ЧИСТАЯ ВЫГОДА (Если > 0, мы заработали сверх плана)
-      totalFinal: finalTotalWithTaxes,
-      taxValue: finalTotalWithTaxes - totalWithOverhead
+      batchCache.set(cacheKey, detailedItem);
+      return detailedItem;
+    });
+
+    // Агрегация
+    const directCosts = totalLaborCost + totalMaterialsCost + totalMachineryCost;
+    const finalBudget = directCosts * overheadMultiplier * taxMultiplier;
+    const internalExpenses = finalBudget - directCosts;
+    const estimateMargin = estimateResult.gp_margin_total || 0;
+    const netProfitDelta = estimateMargin - internalExpenses;
+
+    const summary = {
+      labor: totalLaborCost,
+      materials: totalMaterialsCost,
+      machinery: totalMachineryCost,
+      directCosts,
+      estimateMargin,
+      internalExpenses,
+      netProfitDelta,
+      grossProfit: estimateMargin,
+      netProfit: netProfitDelta,
+      internalMargin: internalExpenses,
+      profitability: ((netProfitDelta / directCosts) * 100).toFixed(2) + '%',
+      detailedWorkCosts,
+      workTypeSummary,
+      anomalies: anomalyLog
     };
 
+    // CI-ready логирование
     console.log(`
-      === Finance v4.0 COMPLETED ===
-      Прямые затраты: ${ourDirectCosts.toFixed(2)}
-      Маржа из сметы: ${gpMarginFromEstimate.toFixed(2)}
-      Наши расходы (НР+Налоги): ${internalExpenses.toFixed(2)}
-      ------------------------------
-      ИТОГОВАЯ ДЕЛЬТА: ${netProfitDelta.toFixed(2)}
-      ${netProfitDelta >= 0 ? '✅ Проект прибыльный' : '🚨 ВНИМАНИЕ: Расходы превышают маржу сметы!'}
+      === Finance v5.3 [FINAL] COMPLETED ===
+      Total labor: ${summary.labor.toFixed(2)}
+      Total materials: ${summary.materials.toFixed(2)}
+      Total machinery: ${summary.machinery.toFixed(2)}
+      Direct costs: ${directCosts.toFixed(2)}
+      Estimate margin: ${estimateMargin.toFixed(2)}
+      Internal expenses: ${internalExpenses.toFixed(2)}
+      Net profit delta: ${netProfitDelta.toFixed(2)} (${summary.profitability})
+      Work types: ${Object.keys(workTypeSummary).join(', ')}
+      Anomalies: ${anomalyLog.length}
     `);
 
-    return result;
+    anomalyLog.forEach(msg => console.warn(msg));
+
+    return summary;
   };
 
   return { process };
+
 })();
