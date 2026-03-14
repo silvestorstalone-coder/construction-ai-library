@@ -1,23 +1,20 @@
-/**
- * Materials.gs - v1.0 [REAL RESOURCE LOGIC]
- */
+// AI Refactored: 2026-03-14T12:04:21.471Z
 
 const Materials = (() => {
-  
-  function process(technologyResult) {
+  async function process(technologyResult) {
     console.log('=== Materials v1.0 [Resource Extraction] STARTED ===');
-    
+
     if (!technologyResult || !technologyResult.workStructure) return null;
 
     const materialsOrder = [];
     const machineryOrder = [];
 
-    technologyResult.workStructure.forEach(work => {
+    for (const work of technologyResult.workStructure) {
       // Запрашиваем ресурсы у "Полевого аналитика" на основе ГЭСН
-      const resources = fetchResourcesFromAI(work.name, work.code, work.quantity, work.unit);
-      
+      const resources = await fetchResourcesFromAI(work.name, work.code, work.quantity, work.unit);
+
       if (resources && resources.materials) {
-        resources.materials.forEach(mat => {
+        for (const mat of resources.materials) {
           materialsOrder.push({
             parentWork: work.name,
             materialName: mat.name,
@@ -25,7 +22,7 @@ const Materials = (() => {
             unit: mat.unit,
             norm: mat.normPerUnit
           });
-        });
+        }
       }
 
       if (resources && resources.machinery) {
@@ -35,12 +32,12 @@ const Materials = (() => {
           hours: work.hours // Привязка к часам из Technology
         });
       }
-    });
+    }
 
     return { materialsOrder, machineryOrder };
   }
 
-  function fetchResourcesFromAI(workName, workCode, quantity, unit) {
+  async function fetchResourcesFromAI(workName, workCode, quantity, unit) {
     if (typeof aiModule === 'undefined') return null;
 
     // Промпт для Яндекса: Жесткое требование ГЭСН
@@ -51,7 +48,7 @@ const Materials = (() => {
     {"materials": [{"name": "название", "normPerUnit": число, "unit": "ед.изм", "totalQuantity": число}], "machinery": "тип техники"}`;
 
     try {
-      const response = aiModule.classifyRawText(prompt); // Используем наш aiModule
+      const response = await aiModule.classifyRawText(prompt); // Используем наш aiModule
       return JSON.parse(response);
     } catch (e) {
       console.error(`Ошибка получения ресурсов для ${workName}: ${e.message}`);
