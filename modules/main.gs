@@ -131,33 +131,48 @@ async function runSubpodryadAI(action) {
     }
 
     // ===========================
-    // 5️⃣ FINANCE (v5.5 DELTA + MATERIALS)
-    // ===========================
-    logInfo("💰 Step 5: Finance...");
-    try {
-      if (typeof Finance === 'undefined' || !Finance.process) {
-        throw new Error("Finance module not loaded");
-      }
+// FINANCE (v5.5 DELTA + MATERIALS)
+// ===========================
 
-      const financeConfig = {
-        overhead_multiplier: 1.15,
-        tax_multiplier: 1.20,
-        laborRates: {},           // пустой — возьмет DEFAULT_RATES
-        includeMaterials: true    // включаем расчет материалов/логистики
-      };
+logInfo("💰 Step 5: Finance...");
 
-      financeResult = Finance.process(estimateResult, technologyOutput, financeConfig, supplyData);
+try {
 
-      logInfo(`✅ Finance completed:`);
-      logInfo(` - Labor cost: ${financeResult.laborCost || 0}`);
-      logInfo(` - Materials cost: ${financeResult.materialsCost || 0}`);
-      logInfo(` - GP Margin: ${financeResult.estimateMargin || 0}`);
-      logInfo(` - Net Delta: ${financeResult.netProfitDelta || 0}`);
+  if (typeof Finance === 'undefined' || !Finance.process) {
+    throw new Error("Finance module not loaded");
+  }
 
-    } catch (e) {
-      logError(`❌ Finance failed: ${e.message}`);
-      throw new Error(`Finance Error: ${e.message}`);
-    }
+  if (!estimateResult) {
+    throw new Error("Finance: estimateResult missing");
+  }
+
+  // Конфигурация из централизованного Config
+  const financeConfig = {
+    overhead_multiplier: Config.get('overhead_multiplier'),
+    tax_multiplier: Config.get('tax_multiplier'),
+    laborRates: Config.get('labor_rates'),
+    includeMaterials: Config.get('includeMaterials')
+  };
+
+  financeResult = Finance.process(
+    estimateResult,
+    technologyOutput,
+    financeConfig,
+    supplyData || null
+  );
+
+  logInfo(`✅ Finance completed:`);
+  logInfo(` - Labor cost: ${financeResult.laborCost || 0}`);
+  logInfo(` - Materials cost: ${financeResult.materialsCost || 0}`);
+  logInfo(` - Estimate Margin: ${financeResult.estimateMargin || 0}`);
+  logInfo(` - Net Delta: ${financeResult.netProfitDelta || 0}`);
+
+} catch (e) {
+
+  logError(`❌ Finance failed: ${e.message}`);
+  throw new Error(`Finance Error: ${e.message}`);
+
+}
 
     // ===========================
     // 6️⃣ COMMERCE
