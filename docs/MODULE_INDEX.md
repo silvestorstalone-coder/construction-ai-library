@@ -1,5 +1,5 @@
 # MODULE_INDEX.md
-Последнее обновление: 3/14/2026, 4:27:56 AM
+Последнее обновление: 3/14/2026, 12:04:06 PM
 > Этот файл является ЭТАЛОНОМ связей для ИИ.
 
 ## 📦 accounting.gs
@@ -27,7 +27,7 @@
 - **Зависимости (связи)**: автономен
 
 ## 📦 estimate.gs
-- **Функции**: process, detectHeaderRow, detectColumns, parseRows, buildStagesFromWorks, parseNumber
+- **Функции**: process, detectHeaderRow, detectColumns, parseRows, buildStagesFromWorks, parseNumber, normalizeUnit, rowHasData
 - **Зависимости (связи)**: автономен
 
 ## 📦 finance.gs
@@ -35,8 +35,12 @@
 - **Зависимости (связи)**: Estimate ➔ Technology ➔ Config
 
 ## 📦 main.gs
-- **Функции**: runSubpodryadAI, _verifyModulesLoaded, _renderResults
-- **Зависимости (связи)**: Estimate ➔ Technology ➔ Finance ➔ Schedule ➔ Materials ➔ Commerce ➔ AuditModule
+- **Функции**: runSubpodryadAI, _verifyModulesLoaded, _renderResults, logInfo, logWarning, logError
+- **Зависимости (связи)**: Estimate ➔ Technology ➔ Finance ➔ Schedule ➔ Materials ➔ Commerce
+
+## 📦 materials.gs
+- **Функции**: process, fetchResourcesFromAI
+- **Зависимости (связи)**: Technology
 
 ## 📦 menu.gs
 - **Функции**: onOpen, triggerAiRunner, showTokenPrompt, analyzeProjectStructure, menuEstimate, menuMyEstimate, menuTechnology, menuSchedule, menuWorkers, menuEquipment, menuMaterialsConsumption, menuMaterialsRequest, menuFinance, menuCommerce, menuKS2, menuInvoice, menuAct, runSubpodryadAI
@@ -51,11 +55,11 @@
 - **Зависимости (связи)**: автономен
 
 ## 📦 schedule.gs
-- **Функции**: process
-- **Зависимости (связи)**: автономен
+- **Функции**: process, formatDate
+- **Зависимости (связи)**: Technology ➔ Config
 
 ## 📦 technology.gs
-- **Функции**: process, getTechnologyForWork, isValidNorm
+- **Функции**: process, processWorks, getTechnologyForWork, isValidNorm
 - **Зависимости (связи)**: автономен
 
 ## 📦 test.gs
