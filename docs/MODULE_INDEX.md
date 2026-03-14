@@ -1,5 +1,5 @@
 # MODULE_INDEX.md
-Последнее обновление: 3/14/2026, 5:46:16 PM
+Последнее обновление: 3/14/2026, 6:30:31 PM
 > Этот файл является ЭТАЛОНОМ связей для ИИ.
 
 ## 📦 accounting.gs
@@ -32,7 +32,7 @@
 
 ## 📦 finance.gs
 - **Функции**: нет
-- **Зависимости (связи)**: Estimate ➔ Technology
+- **Зависимости (связи)**: Estimate ➔ Technology ➔ Config
 
 ## 📦 main.gs
 - **Функции**: runSubpodryadAI, _verifyModulesLoaded, _renderResults, logInfo, logWarning, logError
