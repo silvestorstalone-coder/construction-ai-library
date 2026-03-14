@@ -1,4 +1,4 @@
-// AI Refactored: 2026-03-13T19:57:51.279Z
+// AI Refactored: 2026-03-14T04:28:05.485Z
 
 const Technology = (() => {
   const normCache = {};
