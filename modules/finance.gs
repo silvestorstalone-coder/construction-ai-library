@@ -1,11 +1,6 @@
-/**
- * Finance.gs - v5.3 INDUSTRIAL [FINAL SUPER VERSION]
- * ЛОГИКА: Расчет себестоимости с batch-кэшированием, аналитикой, KPI и CI-ready логами
- * СОВМЕСТИМОСТЬ: Estimate v12+, Technology v4.3+
- */
+// AI Refactored: 2026-03-14T17:46:17.943Z
 
 const Finance = (() => {
-
   const DEFAULT_RATES = {
     earth: 450,
     concrete: 670,
@@ -18,15 +13,16 @@ const Finance = (() => {
   const MAX_HOURS_PER_UNIT = 100;
   const MIN_HOURS_PER_UNIT = 0.01;
 
-  const process = (estimateResult, technologyResult, config = {}) => {
+  const process = async (estimateResult, technologyResult, config = {}) => {
     console.log('=== Finance v5.3 [FINAL] STARTED ===');
 
     if (!technologyResult || !technologyResult.workStructure) {
       throw new Error('Finance: Technology.workStructure отсутствует');
     }
 
-    const overheadMultiplier = config.overhead_multiplier || 1.15;
-    const taxMultiplier = config.tax_multiplier || 1.20;
+    const hourlyRate = Config.get('hourly_rate') || 500;
+    const taxMultiplier = Config.get('tax_multiplier') || 1.20;
+    const overheadMultiplier = Config.get('overhead_multiplier') || 1.15;
 
     let totalLaborCost = 0;
     let totalMaterialsCost = 0;
@@ -136,5 +132,4 @@ const Finance = (() => {
   };
 
   return { process };
-
 })();
