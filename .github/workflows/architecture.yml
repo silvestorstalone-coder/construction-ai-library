@@ -1,10 +1,13 @@
 name: Full Architecture & AI Automation
 
+permissions:
+  contents: read
+
 on:
-  push:
+  pull_request:
     branches:
       - main
-      - '**'
+  workflow_dispatch:
 
 jobs:
   architecture-and-ai:
@@ -15,48 +18,76 @@ jobs:
       YANDEX_API_KEY: ${{ secrets.YANDEX_API_KEY }}
 
     steps:
-      # 1. Клонируем репозиторий
+
+      ########################################################
+      # Checkout
+      ########################################################
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Устанавливаем Node.js 24
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '24'
+      ########################################################
+      # Node setup
+      ########################################################
 
-      # 3. Устанавливаем зависимости для проверки архитектуры
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      ########################################################
+      # Install tools
+      ########################################################
+
       - name: Install dependency-cruiser & jq
         run: |
           npm install -g dependency-cruiser
-          sudo apt-get update && sudo apt-get install -y jq curl
+          sudo apt-get update
+          sudo apt-get install -y jq curl
 
-      # 4. Проверка архитектуры модулей .gs
+      ########################################################
+      # Architecture check
+      ########################################################
+
       - name: Run architecture check
-        run: npx depcruise . --config .dependency-cruiser.cjs
-
-      # 5. Проверка норм и pipeline (пример)
-      - name: Pipeline validation (dry-run)
         run: |
-          echo "Проверка наличия всех модулей .gs, SYSTEM_PIPELINE.md и Domain_Model.md"
-          test -f SYSTEM_PIPELINE.md && echo "SYSTEM_PIPELINE.md найден" || echo "!!! SYSTEM_PIPELINE.md отсутствует"
-          test -f DOMAIN_MODEL.md && echo "DOMAIN_MODEL.md найден" || echo "!!! DOMAIN_MODEL.md отсутствует"
+          npx depcruise . --config .dependency-cruiser.cjs
+
+      ########################################################
+      # Pipeline validation
+      ########################################################
+
+      - name: Pipeline validation
+        run: |
+          echo "Проверка SYSTEM_PIPELINE и DOMAIN_MODEL"
+
+          test -f docs/SYSTEM_PIPELINE.md && echo "SYSTEM_PIPELINE.md найден" || echo "!!! SYSTEM_PIPELINE.md отсутствует"
+          test -f docs/DOMAIN_MODEL.md && echo "DOMAIN_MODEL.md найден" || echo "!!! DOMAIN_MODEL.md отсутствует"
+
           gs_count=$(find . -type f -name "*.gs" | wc -l)
           echo "Найдено модулей .gs: $gs_count"
 
-      # 6. Тест вызова Яндекс GPT
+      ########################################################
+      # Yandex GPT test
+      ########################################################
+
       - name: Test Yandex GPT API
         run: |
           echo "Проверка токена Яндекс GPT"
+
           curl -s -X POST https://llm.api.cloud.yandex.net/foundationModels/v1/completion \
             -H "Authorization: Api-Key $YANDEX_API_KEY" \
             -H "Content-Type: application/json" \
             -d '{"modelUri":"gpt://b1g9du8j9im5ar92bag3/yandexgpt-lite","completionOptions":{"temperature":0.3,"maxTokens":50},"messages":[{"role":"user","text":"Проверка подключения ИИ"}]}' \
             | jq
 
-      # 7. Сбор отчета (архитектура + API)
-      - name: Save summary
+      ########################################################
+      # Save report
+      ########################################################
+
+      - name: Save architecture report
         run: |
           mkdir -p reports
           npx depcruise . --config .dependency-cruiser.cjs > reports/dependency-report.txt
-          echo "Отчет по модулей .gs и pipeline создан в reports/dependency-report.txt"
+
+          echo "Отчет сохранен в reports/dependency-report.txt"
