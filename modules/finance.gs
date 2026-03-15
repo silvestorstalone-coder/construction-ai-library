@@ -1,4 +1,4 @@
-// AI Refactored: 2026-03-15T10:25:20.645Z
+// AI Refactored: 2026-03-15T10:27:23.310Z
 
 const Finance = (() => {
   const DEFAULT_RATES = {
