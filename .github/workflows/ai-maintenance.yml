@@ -6,8 +6,10 @@ permissions:
 on:
   push:
     branches: [ main ]
+
   schedule:
     - cron: "0 3 * * *"
+
   workflow_dispatch:
 
 concurrency:
@@ -15,14 +17,15 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+
   ai-maintenance:
+
     runs-on: ubuntu-latest
 
     env:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
       YANDEX_API_KEY: ${{ secrets.YANDEX_API_KEY }}
       YANDEX_FOLDER_ID: ${{ secrets.YANDEX_FOLDER_ID }}
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
 
@@ -31,7 +34,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js 24
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "24"
@@ -42,67 +45,43 @@ jobs:
           npm install node-fetch fs-extra
 
       ########################################################
-      # STEP 1 — Move and Index modules
+
+      - name: Move and Index modules
+        run: node ai_tasks/move_and_index_gs.js
+
       ########################################################
 
-      - name: 1. Move and Index .gs files
+      - name: Commit structure
         run: |
-          git stash --include-untracked || true
-          git pull --rebase origin main
-          git stash pop || true
-          node ai_tasks/move_and_index_gs.js
 
-      ########################################################
-      # STEP 2 — Commit structure
-      ########################################################
-
-      - name: 2. Commit Structure Changes
-        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git rm -r --cached node_modules || echo "node_modules already clean"
-
           git add modules/
           git add docs/
-          git add -u
 
-          git diff --cached --quiet || git commit -m "System: Update Index and Structure [skip ci]"
+          git diff --cached --quiet || git commit -m "System: Update Index [skip ci]"
 
-          git stash --include-untracked || true
-          git pull --rebase origin main
-          git stash pop || true
-
-          git push origin main || echo "No structure changes to push"
+          git push origin main || echo "Nothing to push"
 
       ########################################################
-      # STEP 3 — Architecture validation
-      ########################################################
 
-      - name: 3. Run Architecture Check
+      - name: Architecture check
         run: |
-          npx depcruise . --config .dependency-cruiser.cjs || echo "Architecture issues found, but continuing..."
+          npx depcruise . --config .dependency-cruiser.cjs || echo "Architecture warning"
 
       ########################################################
-      # STEP 4 — AI modernization
+
+      - name: AI modernization
+        run: node ai_runner.js
+
       ########################################################
 
-      - name: 4. Run AI Modernization (ai_runner.js)
+      - name: Final docs sync
         run: |
-          node ai_runner.js
-
-      ########################################################
-      # STEP 5 — Final docs sync
-      ########################################################
-
-      - name: 5. Final Cleanup and Docs Sync
-        run: |
-          git stash --include-untracked || true
-          git pull --rebase origin main
-          git stash pop || true
 
           git add docs/
 
-          git diff --cached --quiet || git commit -m "AI: Final sync and docs update [skip ci]"
+          git diff --cached --quiet || git commit -m "AI docs sync [skip ci]"
 
-          git push origin main || echo "Everything is up to date"
+          git push origin main || echo "Up to date"
