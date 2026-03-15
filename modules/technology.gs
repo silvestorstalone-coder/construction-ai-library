@@ -1,4 +1,4 @@
-// AI Refactored: 2026-03-15T10:27:47.850Z
+// AI Refactored
 
 const Technology = (() => {
   const normCache = {};
@@ -6,7 +6,7 @@ const Technology = (() => {
   let aiCallCount = 0;
   const AI_LIMIT = 100;
 
-  function process(estimateOutput) {
+  async function process(estimateOutput) {
     console.log('=== Technology v4.3 SUPER FINAL STARTED ===');
 
     const projectContext = estimateOutput.projectContext || { previousWorks: [] };
@@ -164,7 +164,7 @@ const Technology = (() => {
     }
 
     // 🔹 Этап 5: Smart fallback по типу работы
-    const defaultNorms = {
+    const defaultNorms = Config.get('defaultNorms') || {
       earth: 0.05,
       concrete: 1.2,
       finishing: 2.5,

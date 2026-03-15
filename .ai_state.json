@@ -14,5 +14,6 @@
   "schedule.gs",
   "technology.gs",
   "test.gs",
-  "utils.gs"
+  "utils.gs",
+  "materials.gs"
 ]
