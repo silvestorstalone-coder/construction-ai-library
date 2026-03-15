@@ -1,7 +1,4 @@
-//**
- * Technology.gs - v4.3 SUPER FINAL [FULL GESN CORE + AI + Smart Fallback + Fuzzy Optimized]
- * AI Refactored: 2026-03-14 → 2026-03-14 v4.3
- */
+// AI Refactored: 2026-03-15T10:25:45.808Z
 
 const Technology = (() => {
   const normCache = {};
@@ -30,7 +27,7 @@ const Technology = (() => {
     estimateOutput.stages.forEach((stage) => {
       if (!stage.subsections || stage.subsections.length === 0) {
         const flatWorks = stage.works || [];
-        processWorks(flatWorks, stage.name, "Общий подраздел");
+        processWorks(flatWorks, stage.name, 'Общий подраздел');
         return;
       }
       stage.subsections.forEach((sub) => {
@@ -153,8 +150,8 @@ const Technology = (() => {
     // 🔹 Этап 4: Fuzzy Match (оптимизировано)
     if (projectContext.previousWorks.length > 0) {
       if (!fuzzyCache[cacheKey]) {
-        const match = projectContext.previousWorks.find(prev => 
-          prev.name && workName.slice(0,4).toLowerCase() === prev.name.slice(0,4).toLowerCase() &&
+        const match = projectContext.previousWorks.find(prev =>
+          prev.name && workName.slice(0, 4).toLowerCase() === prev.name.slice(0, 4).toLowerCase() &&
           fuzzyMatch(workName, prev.name)
         );
         if (match && match.normHoursPerUnit) {
@@ -185,16 +182,16 @@ const Technology = (() => {
   function fuzzyMatch(a, b) {
     if (!a || !b) return false;
     const m = a.length, n = b.length;
-    const dp = Array.from({length: m+1}, ()=> Array(n+1).fill(0));
-    for (let i=0;i<=m;i++) dp[i][0]=i;
-    for (let j=0;j<=n;j++) dp[0][j]=j;
-    for (let i=1;i<=m;i++) {
-      for (let j=1;j<=n;j++) {
-        dp[i][j] = a[i-1]===b[j-1] ? dp[i-1][j-1] : Math.min(dp[i-1][j-1]+1, dp[i][j-1]+1, dp[i-1][j]+1);
+    const dp = Array.from({ length: m + 1 }, () => Array(n + 1).fill(0));
+    for (let i = 0; i <= m; i++) dp[i][0] = i;
+    for (let j = 0; j <= n; j++) dp[0][j] = j;
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        dp[i][j] = a[i - 1] === b[j - 1] ? dp[i - 1][j - 1] : Math.min(dp[i - 1][j - 1] + 1, dp[i][j - 1] + 1, dp[i - 1][j] + 1);
       }
     }
     const distance = dp[m][n];
-    const ratio = 1 - distance/Math.max(m,n);
+    const ratio = 1 - distance / Math.max(m, n);
     return ratio >= 0.75;
   }
 
