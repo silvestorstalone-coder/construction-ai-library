@@ -1,7 +1,8 @@
 /**
- * ai_runner.js - v5.4 [MODERNIZATION & SANITY CHECK]
- * Исправлено: Git push вынесен из цикла + безопасный pre-flight
+ * ai_runner.js - v5.5 STABLE
+ * Safe AI modernization runner
  */
+
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
@@ -18,54 +19,80 @@ const STATE_FILE = "./.ai_state.json";
 function setupGit() {
   try {
     execSync("git config --global user.name 'github-actions[bot]'");
-    execSync("git config --global user.email 'github-actions[bot]@users.noreply.github.com'");
-  } catch (e) {
-    console.warn("⚠️ Git config warning");
+    execSync("git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'");
+  } catch {
+    console.warn("Git config skipped");
   }
 }
 
-function syncState() {
+function loadState() {
+  if (!fs.existsSync(STATE_FILE)) return [];
   try {
-    execSync("git fetch origin main");
-    execSync("git reset --hard origin/main");
-    execSync("git pull origin main --rebase");
-    if (fs.existsSync(STATE_FILE)) return JSON.parse(fs.readFileSync(STATE_FILE, "utf8"));
-  } catch (e) {}
-  return [];
+    return JSON.parse(fs.readFileSync(STATE_FILE, "utf8"));
+  } catch {
+    return [];
+  }
+}
+
+function saveState(state) {
+  fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2));
+}
+
+function safeDiff(oldCode, newCode) {
+  if (!oldCode) return newCode;
+  const diff = Math.abs(oldCode.length - newCode.length) / oldCode.length;
+  if (diff > 0.35) {
+    console.log("⚠️ AI change rejected (too large diff)");
+    return oldCode;
+  }
+  return newCode;
 }
 
 async function askAI(payload) {
   const res = await fetch(API_URL, {
     method: "POST",
-    headers: { 
-      "Authorization": `Api-Key ${API_KEY}`, 
-      "Content-Type": "application/json", 
-      "x-folder-id": FOLDER_ID 
+    headers: {
+      Authorization: `Api-Key ${API_KEY}`,
+      "Content-Type": "application/json",
+      "x-folder-id": FOLDER_ID
     },
     body: JSON.stringify(payload)
   });
+
   return await res.json();
 }
 
 async function runSafeCycle() {
-  console.log("🚀 AI-Инженер v5.4 [REFACTORING MODE]");
+
+  console.log("🚀 AI ENGINE v5.5");
+
   setupGit();
-  let processed = syncState();
+
+  const processed = loadState();
   const filesToCommit = [];
 
-  const pipeline = fs.existsSync(PIPELINE_FILE) ? fs.readFileSync(PIPELINE_FILE, "utf8") : "MISSING";
-  const index = fs.existsSync(INDEX_FILE) ? fs.readFileSync(INDEX_FILE, "utf8") : "MISSING";
+  const pipeline = fs.existsSync(PIPELINE_FILE)
+    ? fs.readFileSync(PIPELINE_FILE, "utf8")
+    : "PIPELINE MISSING";
+
+  const index = fs.existsSync(INDEX_FILE)
+    ? fs.readFileSync(INDEX_FILE, "utf8")
+    : "INDEX MISSING";
 
   if (!fs.existsSync(MODULES_DIR)) return;
+
   const files = fs.readdirSync(MODULES_DIR).filter(f => f.endsWith(".gs"));
 
   for (const file of files) {
-    if (processed.includes(file) && file !== 'finance.gs' && file !== 'technology.gs') continue;
+
+    if (processed.includes(file) && file !== "finance.gs" && file !== "technology.gs") {
+      continue;
+    }
 
     const filePath = path.join(MODULES_DIR, file);
-    const code = fs.readFileSync(filePath, "utf8");
+    const oldCode = fs.readFileSync(filePath, "utf8");
 
-    console.log(`🛠 Модернизация модуля: ${file}`);
+    console.log(`🛠 AI modernization: ${file}`);
 
     const payload = {
       modelUri: `gpt://${FOLDER_ID}/yandexgpt/latest`,
@@ -73,60 +100,87 @@ async function runSafeCycle() {
       messages: [
         {
           role: "system",
-          text: `Ты — ведущий инженер GAS. ПОЛНОСТЬЮ ПЕРЕПИШИ код на ES6+.
-          
-          ОБЯЗАТЕЛЬНО:
-          1. В начале комментарий: // AI Refactored: ${new Date().toISOString()}
-          2. FINANCE: Config.get('hourly_rate'), 'tax_multiplier', 'overhead_multiplier'
-          3. TECHNOLOGY: Sanity Check, деление сложных сметных строк
-          4. ЭТАЛОН: ${pipeline}
-          5. Выдавай только чистый код`
+          text: `Ты ведущий инженер Google Apps Script.
+Перепиши код на ES6+.
+
+ОБЯЗАТЕЛЬНО:
+1. Комментарий // AI Refactored
+2. Используй Config.get()
+3. Сохрани API функций
+4. Выводи только код
+Эталон: ${pipeline}`
         },
-        { role: "user", text: `Индекс: ${index}\nКод:\n${code}` }
+        { role: "user", text: `INDEX:\n${index}\nCODE:\n${oldCode}` }
       ]
     };
 
     try {
+
       const data = await askAI(payload);
-      let newCode = data?.result?.alternatives?.[0]?.message?.text || "";
-      newCode = newCode.replace(/```javascript/g, "").replace(/```/g, "").trim();
 
-      if (newCode && newCode.length > 50 && newCode !== code) {
-        fs.writeFileSync(filePath, newCode, "utf8");
+      let newCode =
+        data?.result?.alternatives?.[0]?.message?.text || "";
+
+      newCode = newCode
+        .replace(/```javascript/g, "")
+        .replace(/```/g, "")
+        .trim();
+
+      newCode = safeDiff(oldCode, newCode);
+
+      if (newCode !== oldCode && newCode.length > 50) {
+
+        fs.writeFileSync(filePath, newCode);
+
         filesToCommit.push(filePath);
-        if (!processed.includes(file)) processed.push(file);
-        fs.writeFileSync(STATE_FILE, JSON.stringify(processed, null, 2));
-        console.log(`✅ ${file} обновлен.`);
+
+        if (!processed.includes(file)) {
+          processed.push(file);
+        }
+
+        saveState(processed);
+
+        console.log(`✅ ${file} updated`);
+
       } else {
-        console.log(`ℹ️ ${file}: изменений не требуется.`);
-      }
-    } catch (err) {
-      console.error(`❌ Ошибка на ${file}: ${err.message}`);
-    }
-  }
 
-  // =======================
-  // Batch commit + push
-  // =======================
-  if (filesToCommit.length > 0) {
-    try {
-      // Pre-flight check: один git add на файл
-      for (const f of filesToCommit) {
-        execSync(`git add "${f}"`);
+        console.log(`ℹ️ ${file} unchanged`);
+
       }
 
-      execSync(`git commit -m "AI upgrade: batch refactor v5.4" || echo "Nothing to commit"`);
-
-      // Синхронизация с origin/main
-      execSync("git pull --rebase origin main -X ours");
-      execSync("git push origin main");
-      console.log("🚀 Batch commit и push выполнены успешно.");
     } catch (err) {
-      console.error(`❌ Batch git error: ${err.message}`);
+
+      console.error(`AI error ${file}:`, err.message);
+
     }
-  } else {
-    console.log("ℹ️ Нет изменений для commit/push");
+
   }
+
+  if (filesToCommit.length === 0) {
+    console.log("ℹ️ No changes");
+    return;
+  }
+
+  try {
+
+    for (const f of filesToCommit) {
+      execSync(`git add "${f}"`);
+    }
+
+    execSync(`git add ${STATE_FILE}`);
+
+    execSync(`git commit -m "AI modernization batch v5.5" || echo "Nothing to commit"`);
+
+    execSync("git push origin main");
+
+    console.log("🚀 Push complete");
+
+  } catch (err) {
+
+    console.error("Git error:", err.message);
+
+  }
+
 }
 
 runSafeCycle();
