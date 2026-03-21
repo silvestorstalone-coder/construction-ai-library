@@ -131,48 +131,49 @@ async function runSubpodryadAI(action) {
     }
 
     // ===========================
-// FINANCE (v5.5 DELTA + MATERIALS)
-// ===========================
+    // FINANCE (v5.5 DELTA + MATERIALS)
+    // ===========================
 
-logInfo("💰 Step 5: Finance...");
+    logInfo("💰 Step 5: Finance...");
 
-try {
+    try {
 
-  if (typeof Finance === 'undefined' || !Finance.process) {
-    throw new Error("Finance module not loaded");
-  }
+      if (typeof Finance === 'undefined' || !Finance.process) {
+        throw new Error("Finance module not loaded");
+      }
 
-  if (!estimateResult) {
-    throw new Error("Finance: estimateResult missing");
-  }
+      if (!estimateResult) {
+        throw new Error("Finance: estimateResult missing");
+      }
 
-  // Конфигурация из централизованного Config
-  const financeConfig = {
-    overhead_multiplier: Config.get('overhead_multiplier'),
-    tax_multiplier: Config.get('tax_multiplier'),
-    laborRates: Config.get('labor_rates'),
-    includeMaterials: Config.get('includeMaterials')
-  };
+      // Конфигурация из централизованного Config
+      const financeConfig = {
+        overhead_multiplier: Config.get('overhead_multiplier'),
+        tax_multiplier: Config.get('tax_multiplier'),
+        laborRates: Config.get('labor_rates'),
+        includeMaterials: Config.get('includeMaterials')
+      };
 
-  financeResult = Finance.process(
-    estimateResult,
-    technologyOutput,
-    financeConfig,
-    supplyData || null
-  );
+      // ФИКС: Добавлен await для асинхронного модуля Finance
+      financeResult = await Finance.process(
+        estimateResult,
+        technologyOutput,
+        financeConfig,
+        supplyData || null
+      );
 
-  logInfo(`✅ Finance completed:`);
-  logInfo(` - Labor cost: ${financeResult.laborCost || 0}`);
-  logInfo(` - Materials cost: ${financeResult.materialsCost || 0}`);
-  logInfo(` - Estimate Margin: ${financeResult.estimateMargin || 0}`);
-  logInfo(` - Net Delta: ${financeResult.netProfitDelta || 0}`);
+      logInfo(`✅ Finance completed:`);
+      logInfo(` - Labor cost: ${financeResult.laborCost || 0}`);
+      logInfo(` - Materials cost: ${financeResult.materialsCost || 0}`);
+      logInfo(` - Estimate Margin: ${financeResult.estimateMargin || 0}`);
+      logInfo(` - Net Delta: ${financeResult.netProfitDelta || 0}`);
 
-} catch (e) {
+    } catch (e) {
 
-  logError(`❌ Finance failed: ${e.message}`);
-  throw new Error(`Finance Error: ${e.message}`);
+      logError(`❌ Finance failed: ${e.message}`);
+      throw new Error(`Finance Error: ${e.message}`);
 
-}
+    }
 
     // ===========================
     // 6️⃣ COMMERCE
@@ -216,7 +217,7 @@ try {
       `🔹 Найдено работ: ${estimateResult ? estimateResult.totalWorks : 0} шт.\n` +
       `🔹 Трудозатраты: ${technologyOutput ? technologyOutput.totalHours.toFixed(1) : 0} чел/час\n` +
       `🔹 Срок (приблизительно): ${scheduleOutput ? scheduleOutput.projectTotalDays : 0} дн.\n\n` +
-      `💰 ЧИСТАЯ ПРИБЫЛЬ: ${financeResult ? financeResult.чистаяПрибыль.toFixed(0) : 0} руб.\n` +
+      `💰 ЧИСТАЯ ПРИБЫЛЬ: ${financeResult ? (financeResult.чистаяПрибыль || 0).toFixed(0) : 0} руб.\n` +
       `📈 Рентабельность: ${financeResult ? financeResult.profitability : '0%'}\n` +
       `───────────────────────\n` +
       `Общая сумма контракта: ${financeResult ? financeResult.totalFinal.toFixed(0) : 0} руб.`;
@@ -258,9 +259,9 @@ function _renderResults(action, estimateResult, technologyOutput, financeResult)
     const data = [
       ["Найдено работ", estimateResult ? estimateResult.totalWorks : 0],
       ["Трудозатраты", technologyOutput ? technologyOutput.totalHours.toFixed(2) : 0],
-      ["Чистая прибыль", financeResult ? financeResult.чистаяПрибыль.toFixed(0) : 0],
+      ["Чистая прибыль", financeResult ? (financeResult.чистаяПрибыль || 0).toFixed(0) : 0],
       ["Рентабельность", financeResult ? financeResult.profitability : '0%'],
-      ["Общая сумма контракта", financeResult ? financeResult.totalFinal.toFixed(0) : 0]
+      ["Общая сумма контракта", financeResult ? (financeResult.totalFinal || 0).toFixed(0) : 0]
     ];
     resultsSheet.getRange(row, 1, data.length, 2).setValues(data);
     logInfo("✅ Results sheet updated");
