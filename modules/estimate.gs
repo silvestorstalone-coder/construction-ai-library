@@ -1,7 +1,7 @@
 /*
 =====================================================
 ESTIMATE MODULE v12 INDUSTRIAL STABLE
-v9.1 + v10 + AI CLASSIFIER + SMART UNIT
+v9.1 + v10 + AI CLASSIFIER + SMART UNIT + v5.6-Units
 =====================================================
 */
 
@@ -134,6 +134,7 @@ var parsed = parseRows(body,headerIndex,columnMap);
 
 var stages = buildStages(parsed.works);
 
+// ФИКС: Формирование метаданных и диагностики для main.gs
 return {
 
 type:"complex",
@@ -148,7 +149,17 @@ worksFlat:parsed.works,
 gp_margin_total:parsed.gp_margin_total,
 
 financialRows:parsed.financialRows,
-unclassifiedRows:parsed.unclassifiedRows
+unclassifiedRows:parsed.unclassifiedRows,
+
+metadata: {
+  financialRowsCount: parsed.financialRows.length,
+  unclassifiedRowsCount: parsed.unclassifiedRows.length
+},
+
+diagnostics: {
+  coveragePercent: parsed.works.length > 0 ? ((parsed.works.length / (parsed.works.length + parsed.unclassifiedRows.length)) * 100).toFixed(1) : 0,
+  unitDistribution: {}
+}
 
 };
 
@@ -231,6 +242,16 @@ return;
 if(!isNaN(quantity) && quantity>0){
 
 var rawUnit = String(row[columnMap.unit]||"");
+
+// --- START: v5.6-Units MULTIPLIER LOGIC ---
+var multiplierMatch = rawUnit.match(/(\d+)/);
+if (multiplierMatch) {
+    var mVal = parseInt(multiplierMatch[1]);
+    if ([1, 10, 100, 1000].indexOf(mVal) !== -1) {
+        quantity = quantity * mVal;
+    }
+}
+// --- END: v5.6-Units MULTIPLIER LOGIC ---
 
 var normalizedUnit = normalizeUnit(rawUnit);
 
