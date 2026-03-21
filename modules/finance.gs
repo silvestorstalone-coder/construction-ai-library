@@ -100,13 +100,15 @@ const Finance = (() => {
       materials: totalMaterialsCost,
       machinery: totalMachineryCost,
       directCosts,
+      totalFinal: finalBudget, // Добавлено для корректного отображения итогов
       estimateMargin,
       internalExpenses,
       netProfitDelta,
       grossProfit: estimateMargin,
       netProfit: netProfitDelta,
+      чистаяПрибыль: netProfitDelta, // ФИКС: Для совместимости с main.gs
       internalMargin: internalExpenses,
-      profitability: ((netProfitDelta / directCosts) * 100).toFixed(2) + '%',
+      profitability: directCosts > 0 ? ((netProfitDelta / directCosts) * 100).toFixed(2) + '%' : '0%',
       detailedWorkCosts,
       workTypeSummary,
       anomalies: anomalyLog
